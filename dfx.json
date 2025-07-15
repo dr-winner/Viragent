@@ -1,0 +1,26 @@
+{
+  "canisters": {
+    "viragent_backend": {
+      "main": "src/viragent_backend/main.mo",
+      "type": "motoko"
+    },
+    "viragent_frontend": {
+      "dependencies": [
+        "viragent_backend"
+      ],
+      "source": [
+        "src/viragent_frontend/dist"
+      ],
+      "type": "assets",
+      "workspace": "viragent_frontend"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "output_env_file": ".env",
+  "version": 1
+}
