@@ -12,7 +12,7 @@
         "src/viragent_frontend/dist"
       ],
       "type": "assets",
-      "workspace": "viragent_frontend"
+      "workspace": "src/viragent_frontend"
     }
   },
   "defaults": {

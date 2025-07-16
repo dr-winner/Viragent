@@ -1,25 +1,123 @@
+# DFX and Internet Computer specific
+.dfx/
+.vessel/
+**/declarations/
+canister_ids.json
+
+# Environment variables
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Node.js and npm
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+package-lock.json
+
+# Bun
+bun.lockb
+
+# Build outputs
+dist/
+dist-ssr/
+build/
+out/
+*.tsbuildinfo
+
+# Rust (for Rust canisters)
+target/
+Cargo.lock
+
 # Various IDEs and Editors
 .vscode/
+!.vscode/extensions.json
 .idea/
-**/*~
+*.swp
+*.swo
+*~
+*.tmp
 
-# Mac OSX temporary files
+# Operating System
 .DS_Store
-**/.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
 
-# dfx temporary files
-.dfx/
+# Logs
+logs
+*.log
 
-# generated files
-**/declarations/
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
 
-# rust
-target/
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
 
-# frontend code
-node_modules/
-dist/
-.svelte-kit/
+# nyc test coverage
+.nyc_output
 
-# environment variables
-.env
+# ESLint cache
+.eslintcache
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# Next.js build output
+.next
+
+# Nuxt.js build / generate output
+.nuxt
+
+# Vite cache
+.vite
+
+# Rollup cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# JSPM packages directory
+jspm_packages/
+
+# Serverless directories
+.serverless/
+
+# FuseBox cache
+.fusebox/
+
+# DynamoDB Local files
+.dynamodb/
+
+# TernJS port file
+.tern-port
+
+# Temporary folders
+tmp/
+temp/

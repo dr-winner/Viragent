@@ -1,5 +1,5 @@
 import { fileURLToPath, URL } from 'url';
-import react from '@vitejs/plugin-react';
+import react from '@vitejs/plugin-react-swc';
 import { defineConfig } from 'vite';
 import environment from 'vite-plugin-environment';
 import dotenv from 'dotenv';
@@ -37,6 +37,10 @@ export default defineConfig({
         replacement: fileURLToPath(
           new URL("../declarations", import.meta.url)
         ),
+      },
+      {
+        find: "@",
+        replacement: fileURLToPath(new URL("./src", import.meta.url)),
       },
     ],
     dedupe: ['@dfinity/agent'],
