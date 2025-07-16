@@ -3,6 +3,7 @@ import { AuthClient } from '@dfinity/auth-client';
 import { Identity } from '@dfinity/agent';
 import { Principal } from '@dfinity/principal';
 import { useToast } from '@/hooks/use-toast';
+import { backendService } from '@/services/backend';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -11,6 +12,7 @@ interface AuthContextType {
   login: () => Promise<void>;
   logout: () => Promise<void>;
   isLoading: boolean;
+  isBackendReady: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -32,6 +34,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [identity, setIdentity] = useState<Identity | null>(null);
   const [principal, setPrincipal] = useState<Principal | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isBackendReady, setIsBackendReady] = useState(false);
   const [authClient, setAuthClient] = useState<AuthClient | null>(null);
   const { toast } = useToast();
 
@@ -42,7 +45,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     initAuthClient();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const initBackendService = async (identity: Identity) => {
+    try {
+      await backendService.init(identity);
+      setIsBackendReady(true);
+    } catch (error) {
+      console.error('Failed to initialize backend service:', error);
+      toast({
+        title: "Backend Error",
+        description: "Failed to connect to backend service. Some features may not work.",
+        variant: "destructive"
+      });
+    }
+  };
 
   const initAuthClient = async () => {
     try {
@@ -57,6 +74,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const principal = identity.getPrincipal();
         setIdentity(identity);
         setPrincipal(principal);
+        
+        // Initialize backend service
+        await initBackendService(identity);
       }
     } catch (error) {
       console.error('Failed to initialize auth client:', error);
@@ -107,6 +127,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setIdentity(identity);
         setPrincipal(principal);
 
+        // Initialize backend service
+        await initBackendService(identity);
+
         toast({
           title: "Welcome to Viragent!",
           description: `Successfully authenticated with Internet Identity: ${principal.toString().slice(0, 8)}...`,
@@ -134,6 +157,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsAuthenticated(false);
       setIdentity(null);
       setPrincipal(null);
+      setIsBackendReady(false);
 
       toast({
         title: "Logged Out",
@@ -157,7 +181,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     principal,
     login,
     logout,
-    isLoading
+    isLoading,
+    isBackendReady
   };
 
   return (
