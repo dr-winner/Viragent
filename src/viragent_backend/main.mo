@@ -14,11 +14,64 @@ import AIOutput "./ai_output";
 import Schedule "./schedule";
 import Dispatch "./dispatch";
 import Analytics "./analytics";
+import AIService "./ai_service";
 
 actor class ViragentBackend() = this {
 
+  // HTTP Outcalls Types
+  type HttpRequestArgs = {
+    url : Text;
+    max_response_bytes : ?Nat64;
+    headers : [HttpHeader];
+    body : ?[Nat8];
+    method : HttpMethod;
+    transform : ?TransformRawResponseFunction;
+  };
+
+  type HttpHeader = {
+    name : Text;
+    value : Text;
+  };
+
+  type HttpMethod = {
+    #get;
+    #post;
+    #head;
+  };
+
+  type HttpResponsePayload = {
+    status : Nat;
+    headers : [HttpHeader];
+    body : [Nat8];
+  };
+
+  type TransformRawResponseFunction = {
+    function : shared query TransformRawResponse -> async HttpResponsePayload;
+    context : Blob;
+  };
+
+  type TransformRawResponse = {
+    status : Nat;
+    body : [Nat8];
+    headers : [HttpHeader];
+    context : Blob;
+  };
+
+  // Management canister interface for HTTP outcalls
+  type ManagementCanister = actor {
+    http_request : HttpRequestArgs -> async HttpResponsePayload;
+  };
+
+  // Management canister for HTTP outcalls
+  let ic : ManagementCanister = actor ("aaaaa-aa");
+
   // System initialization
   private stable var initialized = false;
+
+  // AI Service Configuration
+  private stable var openAIApiKey: Text = "";
+  private stable var claudeApiKey: Text = "";
+  private stable var defaultAIProvider: AIService.AIProvider = #OpenAI;
 
   // Data stores
   private var userStore = User.createStore();
@@ -36,6 +89,91 @@ actor class ViragentBackend() = this {
       return "System initialized successfully";
     };
     return "System already initialized";
+  };
+
+  // AI Configuration Management
+  public shared(msg) func setAIConfig(provider: AIService.AIProvider, apiKey: Text): async Result.Result<Text, Text> {
+    if (not User.isRegistered(userStore, msg.caller)) {
+      return #err("User not registered");
+    };
+    
+    switch (provider) {
+      case (#OpenAI) {
+        openAIApiKey := apiKey;
+        defaultAIProvider := #OpenAI;
+        #ok("OpenAI API key configured successfully")
+      };
+      case (#Claude) {
+        claudeApiKey := apiKey;
+        defaultAIProvider := #Claude;
+        #ok("Claude API key configured successfully")
+      };
+      case (#Mock) {
+        defaultAIProvider := #Mock;
+        #ok("Mock AI provider configured successfully")
+      };
+    }
+  };
+
+  public query func getAIProvider(): async AIService.AIProvider {
+    defaultAIProvider
+  };
+
+  // AI Content Generation (using real AI APIs)
+  public shared(msg) func generateAIContent(
+    mediaId: Text,
+    prompt: Text,
+    tone: Text,
+    platform: Text
+  ): async Result.Result<Text, Text> {
+    if (not User.isRegistered(userStore, msg.caller)) {
+      return #err("User not registered");
+    };
+    
+    // Verify user owns the media
+    switch (Media.getMedia(mediaStore, mediaId)) {
+      case (?item) {
+        if (item.owner != msg.caller) {
+          return #err("Unauthorized: Cannot generate content for media owned by another user");
+        };
+        
+        let request: AIService.AIRequest = {
+          prompt = prompt;
+          tone = tone;
+          platform = platform;
+          mediaType = item.mediaType;
+        };
+        
+        // Get appropriate API key based on provider
+        let apiKey = switch (defaultAIProvider) {
+          case (#OpenAI) openAIApiKey;
+          case (#Claude) claudeApiKey;
+          case (#Mock) ""; // Mock doesn't need API key
+        };
+        
+        // Generate content using configured AI service with real OpenAI API
+        let result = await AIService.generateContent(defaultAIProvider, apiKey, request, ic.http_request);
+        
+        switch (result) {
+          case (#ok(aiResponse)) {
+            let output: AIOutput.AIOutput = {
+              mediaId = mediaId;
+              caption = aiResponse.caption;
+              hashtags = aiResponse.hashtags;
+              score = aiResponse.score;
+              generatedAt = Time.now();
+            };
+            
+            let saveResult = AIOutput.saveOutput(aiOutputStore, output);
+            #ok("AI content generated successfully: " # saveResult)
+          };
+          case (#err(error)) {
+            #err("AI generation failed: " # error)
+          };
+        }
+      };
+      case null #err("Media not found");
+    }
   };
 
   // User Management
@@ -119,7 +257,7 @@ actor class ViragentBackend() = this {
     Tone.getAllTones(toneStore)
   };
 
-  // AI Output Management
+  // AI Output Management (Enhanced with AI generation)
   public shared(msg) func generateOutput(output: AIOutput.AIOutput): async Result.Result<Text, Text> {
     if (not User.isRegistered(userStore, msg.caller)) {
       return #err("User not registered");
@@ -136,6 +274,43 @@ actor class ViragentBackend() = this {
       };
       case null #err("Media not found");
     }
+  };
+
+  // Simple AI generation with automatic detection
+  public shared(msg) func generateSmartContent(
+    mediaId: Text,
+    prompt: Text
+  ): async Result.Result<Text, Text> {
+    if (not User.isRegistered(userStore, msg.caller)) {
+      return #err("User not registered");
+    };
+    
+    // Verify user owns the media
+    switch (Media.getMedia(mediaStore, mediaId)) {
+      case (?item) {
+        if (item.owner != msg.caller) {
+          return #err("Unauthorized: Cannot generate content for media owned by another user");
+        };
+        
+        // Auto-detect platform and tone based on user history or defaults
+        let platform = "instagram"; // Default platform
+        let tone = "casual"; // Default tone
+        
+        // Use real AI generation
+        await generateAIContent(mediaId, prompt, tone, platform)
+      };
+      case null #err("Media not found");
+    }
+  };
+
+  // Get platform recommendations
+  public query func getPlatformRecommendations(platform: Text): async {
+    maxCaptionLength: Nat;
+    optimalHashtagCount: Nat;
+    bestTones: [Text];
+    features: [Text];
+  } {
+    AIService.getPlatformRecommendations(platform)
   };
 
   public query(msg) func getOutput(mediaId: Text): async ?AIOutput.AIOutput {
