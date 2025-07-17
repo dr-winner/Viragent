@@ -50,6 +50,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const initBackendService = async (identity: Identity) => {
     try {
       await backendService.init(identity);
+      
+      // Auto-register user if not already registered
+      const isRegResult = await backendService.isRegistered();
+      if (isRegResult.success && !isRegResult.data) {
+        console.log('User not registered, auto-registering with Internet Identity...');
+        const regResult = await backendService.autoRegister();
+        if (regResult.success) {
+          console.log('User auto-registered successfully:', regResult.data);
+        } else {
+          console.warn('Auto-registration failed:', regResult.error);
+        }
+      }
+      
       setIsBackendReady(true);
     } catch (error) {
       console.error('Failed to initialize backend service:', error);

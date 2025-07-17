@@ -15,6 +15,7 @@ import Schedule "./schedule";
 import Dispatch "./dispatch";
 import Analytics "./analytics";
 import AIService "./ai_service";
+import Config "./config";
 
 actor class ViragentBackend() = this {
 
@@ -81,14 +82,42 @@ actor class ViragentBackend() = this {
   private var scheduleStore = Schedule.createStore();
   private var analyticsStore = Analytics.createStore();
 
-  // Initialize the system
-  public func init(): async Text {
+  // Initialize the system with optional environment configuration
+  public func init(openAI_key: ?Text, claude_key: ?Text): async Text {
     if (not initialized) {
       initialized := true;
-      Debug.print("Viragent Backend initialized");
-      return "System initialized successfully";
+      
+      // Set API keys from environment if provided
+      switch (openAI_key) {
+        case (?key) {
+          if (Config.isValidOpenAIKey(key)) {
+            openAIApiKey := key;
+            defaultAIProvider := #OpenAI;
+            Debug.print("OpenAI API key configured from environment");
+          };
+        };
+        case null { };
+      };
+      
+      switch (claude_key) {
+        case (?key) {
+          if (Config.isValidClaudeKey(key)) {
+            claudeApiKey := key;
+            Debug.print("Claude API key configured from environment");
+          };
+        };
+        case null { };
+      };
+      
+      Debug.print("Viragent Backend initialized with Internet Identity authentication");
+      return "System initialized successfully with Internet Identity";
     };
     return "System already initialized";
+  };
+
+  // Simplified init for backward compatibility
+  public func initSimple(): async Text {
+    await init(null, null);
   };
 
   // AI Configuration Management
@@ -176,17 +205,17 @@ actor class ViragentBackend() = this {
     }
   };
 
-  // User Management
-  public shared(msg) func register(email: Text): async Text {
+  // User Management (Internet Identity based)
+  public shared(msg) func register(): async Text {
     let caller = msg.caller;
     if (Principal.isAnonymous(caller)) {
-      return "Anonymous principals cannot register";
+      return "Anonymous principals cannot register. Please use Internet Identity.";
     };
-    return User.registerUser(userStore, caller, email);
+    return User.registerUser(userStore, caller, Time.now());
   };
 
-  public query(msg) func getProfile(): async ?Text {
-    User.getEmail(userStore, msg.caller)
+  public query(msg) func getProfile(): async ?User.UserProfile {
+    User.getProfile(userStore, msg.caller)
   };
 
   public query(msg) func isRegistered(): async Bool {

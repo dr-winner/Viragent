@@ -2,18 +2,27 @@ import Principal "mo:base/Principal";
 import HashMap "mo:base/HashMap";
 
 module User {
-  public type Store = HashMap.HashMap<Principal, Text>;
+  public type UserProfile = {
+    principal: Principal;
+    registeredAt: Int;
+  };
+
+  public type Store = HashMap.HashMap<Principal, UserProfile>;
 
   public func createStore(): Store {
-    HashMap.HashMap<Principal, Text>(100, Principal.equal, Principal.hash)
+    HashMap.HashMap<Principal, UserProfile>(100, Principal.equal, Principal.hash)
   };
 
-  public func registerUser(store: Store, caller: Principal, email: Text): Text {
-    store.put(caller, email);
-    return "Registered";
+  public func registerUser(store: Store, caller: Principal, timestamp: Int): Text {
+    let profile: UserProfile = {
+      principal = caller;
+      registeredAt = timestamp;
+    };
+    store.put(caller, profile);
+    return "Registered with Internet Identity";
   };
 
-  public func getEmail(store: Store, user: Principal): ?Text {
+  public func getProfile(store: Store, user: Principal): ?UserProfile {
     store.get(user)
   };
 

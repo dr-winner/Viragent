@@ -154,14 +154,21 @@ class ViragentBackendService {
   // API Methods
 
   // User Management
-  async register(email: string): Promise<ApiResult<string>> {
+  // Auto-register user with Internet Identity (no email required)
+  async autoRegister(): Promise<ApiResult<string>> {
     try {
-      const actor = this.ensureActor();
-      const result = await actor.register(email);
+      const actor = this.getActor();
+      const result = await actor.register();
       return { success: true, data: result };
     } catch (error) {
-      return { success: false, error: String(error) };
+      console.error('Auto-registration failed:', error);
+      return { success: false, error: error instanceof Error ? error.message : 'Auto-registration failed' };
     }
+  }
+
+  // Legacy register method for backward compatibility
+  async register(): Promise<ApiResult<string>> {
+    return this.autoRegister();
   }
 
   async getProfile(): Promise<ApiResult<string | null>> {
