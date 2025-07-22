@@ -30,6 +30,9 @@ import {
   Copy,
   TrendingUp
 } from 'lucide-react';
+import { useToast } from "@/hooks/use-toast";
+import { HttpAgent, Actor } from "@dfinity/agent";
+import { idlFactory as backendIdl, canisterId as backendCanisterId } from "../../../declarations/viragent_backend";
 
 const Schedule = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
@@ -116,6 +119,41 @@ const Schedule = () => {
         ? prev.filter(id => id !== platformId)
         : [...prev, platformId]
     );
+  };
+
+  const { toast } = useToast();
+
+  const handleSchedulePost = async () => {
+    try {
+      if (!selectedDate || selectedPlatforms.length === 0) {
+        toast({ title: "Missing info", description: "Select date, time, and at least one platform.", variant: "destructive" });
+        return;
+      }
+      const accessToken = localStorage.getItem("twitter_access_token");
+      if (selectedPlatforms.includes("twitter") && !accessToken) {
+        toast({ title: "Not connected", description: "Connect to Twitter to schedule Twitter posts.", variant: "destructive" });
+        return;
+      }
+      const agent = new HttpAgent({ host: "http://localhost:4943" });
+      const backend = Actor.createActor(backendIdl, {
+        agent,
+        canisterId: backendCanisterId,
+      });
+      // For demo: just schedule for Twitter (extend for other platforms as needed)
+      if (selectedPlatforms.includes("twitter")) {
+        const content = "Your scheduled tweet content here"; // Replace with actual content input
+        const scheduledAt = new Date(selectedDate);
+        scheduledAt.setHours(Number(selectedTime.split(":")[0]), Number(selectedTime.split(":")[1]));
+        const res = await backend.scheduleTwitterPost(content, scheduledAt.getTime(), accessToken);
+        if (res && res.toLowerCase().includes("success")) {
+          toast({ title: "Success", description: "Twitter post scheduled!" });
+        } else {
+          toast({ title: "Error", description: res, variant: "destructive" });
+        }
+      }
+    } catch (err) {
+      toast({ title: "Error", description: String(err), variant: "destructive" });
+    }
   };
 
   return (
@@ -245,6 +283,7 @@ const Schedule = () => {
                 size="lg" 
                 className="w-full group"
                 disabled={selectedPlatforms.length === 0 || !selectedDate}
+                onClick={handleSchedulePost}
               >
                 <CalendarIcon className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
                 Schedule Post

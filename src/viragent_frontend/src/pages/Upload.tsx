@@ -74,23 +74,9 @@ const Upload = () => {
     );
     
     setUploadedFiles(prev => [...prev, ...newFiles]);
-    simulateUpload();
-  };
-
-  const simulateUpload = () => {
-    setIsUploading(true);
-    setUploadProgress(0);
-    
-    const interval = setInterval(() => {
-      setUploadProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setIsUploading(false);
-          return 100;
-        }
-        return prev + 10;
-      });
-    }, 200);
+    // TODO: Implement real upload logic here (call backend API)
+    // For now, show an error or disable upload if not implemented
+    // setIsUploading(true); setUploadProgress(0); ...
   };
 
   const removeFile = (index: number) => {

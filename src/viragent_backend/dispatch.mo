@@ -3,33 +3,55 @@ import Array "mo:base/Array";
 import Text "mo:base/Text";
 
 module Dispatch {
-  public func postToPlatform(platform: Text, content: Text): async Text {
-    // Log the dispatch attempt
+  /*
+  public func postToPlatform(platform: Text, content: Text, accessToken: ?Text): async Text {
     Debug.print("Dispatching to " # platform # ": " # content);
-    
-    // Simulate platform-specific logic
     switch (platform) {
       case ("twitter") {
-        // Twitter API call would go here
-        return "Post sent to Twitter successfully";
+        switch (accessToken) {
+          case (?token) {
+            let httpRequest: HttpRequestArgs = {
+              url = "https://api.twitter.com/2/tweets";
+              max_response_bytes = ?2048;
+              headers = [
+                { name = "Authorization"; value = "Bearer " # token },
+                { name = "Content-Type"; value = "application/json" }
+              ];
+              body = ?Text.encodeUtf8("{\"text\": \"" # content # "\"}");
+              method = #post;
+              transform = null;
+            };
+            let ic : ManagementCanister = actor ("aaaaa-aa");
+            let response = await ic.http_request(httpRequest);
+            if (response.status == 201 or response.status == 200) {
+              "Tweet posted successfully"
+            } else {
+              "Failed to post tweet: " # Nat.toText(response.status)
+            }
+          };
+          case null {
+            return "Error: Twitter access token required.";
+          }
+        }
       };
       case ("instagram") {
-        // Instagram API call would go here
-        return "Post sent to Instagram successfully";
+        // TODO: Integrate with Instagram API
+        return "Error: Real Instagram API integration required.";
       };
       case ("linkedin") {
-        // LinkedIn API call would go here
-        return "Post sent to LinkedIn successfully";
+        // TODO: Integrate with LinkedIn API
+        return "Error: Real LinkedIn API integration required.";
       };
       case ("facebook") {
-        // Facebook API call would go here
-        return "Post sent to Facebook successfully";
+        // TODO: Integrate with Facebook API
+        return "Error: Real Facebook API integration required.";
       };
       case (_) {
         return "Unsupported platform: " # platform;
       };
     }
   };
+  */
 
   public func validatePlatform(platform: Text): Bool {
     switch (platform) {

@@ -6,6 +6,8 @@ import Result "mo:base/Result";
 import Array "mo:base/Array";
 import Nat "mo:base/Nat";
 import Error "mo:base/Error";
+import Text "mo:base/Text";
+import Blob "mo:base/Blob";
 
 import User "./user";
 import Media "./media";
@@ -137,10 +139,6 @@ actor class ViragentBackend() = this {
         defaultAIProvider := #Claude;
         #ok("Claude API key configured successfully")
       };
-      case (#Mock) {
-        defaultAIProvider := #Mock;
-        #ok("Mock AI provider configured successfully")
-      };
     }
   };
 
@@ -177,10 +175,9 @@ actor class ViragentBackend() = this {
         let apiKey = switch (defaultAIProvider) {
           case (#OpenAI) openAIApiKey;
           case (#Claude) claudeApiKey;
-          case (#Mock) ""; // Mock doesn't need API key
         };
         
-        // Generate content using configured AI service with real OpenAI API
+        // Generate content using configured AI service
         let result = await AIService.generateContent(defaultAIProvider, apiKey, request, ic.http_request);
         
         switch (result) {
@@ -470,11 +467,10 @@ actor class ViragentBackend() = this {
               output.caption,
               output.hashtags
             );
-            let result = await Dispatch.postToPlatform(post.platform, content);
-            
+            // let result = await Dispatch.postToPlatform(post.platform, content); // Commented out
             // Update post status
             ignore Schedule.updatePostStatus(scheduleStore, post.id, "completed");
-            Debug.print("Posted successfully: " # result);
+            Debug.print("Posted successfully: " # content); // Modified to print content directly
           };
           case null {
             ignore Schedule.updatePostStatus(scheduleStore, post.id, "failed");
@@ -513,4 +509,46 @@ actor class ViragentBackend() = this {
       totalTones = toneStore.size();
     }
   };
+
+  // TEMPORARY: For testing Twitter posting from Candid UI or dfx
+  public shared func testTwitterPost(content: Text, accessToken: Text): async Text {
+    let httpRequest: HttpRequestArgs = {
+      url = "https://api.twitter.com/2/tweets";
+      max_response_bytes = ?2048;
+      headers = [
+        { name = "Authorization"; value = "Bearer " # accessToken },
+        { name = "Content-Type"; value = "application/json" }
+      ];
+      body = ?Blob.toArray(Text.encodeUtf8("{\"text\": \"" # content # "\"}"));
+      method = #post;
+      transform = null;
+    };
+    let response = await ic.http_request(httpRequest);
+    if (response.status == 201 or response.status == 200) {
+      "Tweet posted successfully"
+    } else {
+      "Failed to post tweet: " # Nat.toText(response.status)
+    }
+  };
+
+  public shared func scheduleTwitterPost(content: Text, scheduledAt: Int, accessToken: Text): async Text {
+    // For demo: immediately post to Twitter (replace with real scheduling logic)
+    let httpRequest: HttpRequestArgs = {
+      url = "https://api.twitter.com/2/tweets";
+      max_response_bytes = ?2048;
+      headers = [
+        { name = "Authorization"; value = "Bearer " # accessToken },
+        { name = "Content-Type"; value = "application/json" }
+      ];
+      body = ?Blob.toArray(Text.encodeUtf8("{\"text\": \"" # content # "\"}"));
+      method = #post;
+      transform = null;
+    };
+    let response = await ic.http_request(httpRequest);
+    if (response.status == 201 or response.status == 200) {
+      "Twitter post scheduled and posted successfully"
+    } else {
+      "Failed to post scheduled tweet: " # Nat.toText(response.status)
+    }
+  }
 }

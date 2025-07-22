@@ -13,6 +13,9 @@ import Upload from "./pages/Upload";
 import AIReview from "./pages/AIReview";
 import Schedule from "./pages/Schedule";
 import NotFound from "./pages/NotFound";
+import TwitterLogin from "./pages/TwitterLogin";
+import TwitterCallback from "./pages/TwitterCallback";
+import TwitterTest from "./pages/TwitterTest";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +30,9 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/auth/twitter" element={<TwitterLogin />} />
+            <Route path="/auth/twitter/callback" element={<TwitterCallback />} />
+            <Route path="/twitter-test" element={<TwitterTest />} />
             <Route 
               path="/dashboard" 
               element={

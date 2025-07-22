@@ -57,11 +57,13 @@ const AIReview = () => {
     { platform: 'TikTok', time: '7:00 PM', engagement: '95%', icon: '🎵' }
   ];
 
-  const handleRegenerate = () => {
+  const handleRegenerate = async () => {
     setIsRegenerating(true);
+    // TODO: Call real backend API to regenerate AI content
+    // For now, show an error or placeholder if not implemented
     setTimeout(() => {
       setIsRegenerating(false);
-      // Simulate new content generation
+      // setCaption(newCaptionFromBackend);
     }, 2000);
   };
 

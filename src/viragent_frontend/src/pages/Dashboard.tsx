@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -30,9 +30,49 @@ import {
   Target,
   Clock
 } from 'lucide-react';
+import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
+import { HttpAgent, Actor } from "@dfinity/agent";
+import { idlFactory as backendIdl, canisterId as backendCanisterId } from "../../../declarations/viragent_backend";
 
 const Dashboard = () => {
   const [timeRange, setTimeRange] = useState('7d');
+  const [twitterConnected, setTwitterConnected] = useState(false);
+  const [tweetContent, setTweetContent] = useState("");
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    setTwitterConnected(!!localStorage.getItem("twitter_access_token"));
+  }, []);
+
+  const handleConnectTwitter = () => {
+    navigate("/auth/twitter");
+  };
+
+  const handleQuickTweet = async () => {
+    try {
+      const accessToken = localStorage.getItem("twitter_access_token");
+      if (!accessToken) {
+        toast({ title: "Not connected", description: "Please connect to Twitter first.", variant: "destructive" });
+        return;
+      }
+      const agent = new HttpAgent({ host: "http://localhost:4943" });
+      const backend = Actor.createActor(backendIdl, {
+        agent,
+        canisterId: backendCanisterId,
+      });
+      const res = await backend.testTwitterPost(tweetContent, accessToken);
+      if (res && res.toLowerCase().includes("success")) {
+        toast({ title: "Success", description: "Tweet posted successfully!" });
+        setTweetContent("");
+      } else {
+        toast({ title: "Error", description: res, variant: "destructive" });
+      }
+    } catch (err) {
+      toast({ title: "Error", description: String(err), variant: "destructive" });
+    }
+  };
 
   const engagementData = [
     { name: 'Mon', likes: 240, shares: 45, comments: 89 },
