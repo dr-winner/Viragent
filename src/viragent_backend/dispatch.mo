@@ -55,7 +55,7 @@ module Dispatch {
 
   public func validatePlatform(platform: Text): Bool {
     switch (platform) {
-      case ("twitter" or "instagram" or "linkedin" or "facebook") true;
+      case ("twitter" or "instagram" or "linkedin" or "facebook" or "medium") true;
       case (_) false;
     }
   };
@@ -88,6 +88,14 @@ module Dispatch {
       case ("facebook") {
         // Facebook format
         caption # "\n" # hashtagText
+      };
+      case ("medium") {
+        // Medium article format - no hashtags, focus on content
+        caption # "\n\n" # Array.foldLeft<Text, Text>(
+          hashtags,
+          "Tags: ",
+          func(acc, tag) = acc # tag # ", "
+        )
       };
       case (_) {
         caption # hashtagText

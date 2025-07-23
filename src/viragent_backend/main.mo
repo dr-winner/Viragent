@@ -690,5 +690,58 @@ actor class ViragentBackend() = this {
     } else {
       "Failed to post scheduled tweet: " # Nat.toText(response.status)
     }
+  };
+
+  // TEMPORARY: For testing Medium posting from Candid UI or dfx
+  public shared func testMediumPost(title: Text, content: Text, accessToken: Text, publishStatus: Text): async Text {
+    // First get user ID
+    let userRequest: HttpRequestArgs = {
+      url = "https://api.medium.com/v1/me";
+      max_response_bytes = ?2048;
+      headers = [
+        { name = "Authorization"; value = "Bearer " # accessToken },
+        { name = "Accept"; value = "application/json" }
+      ];
+      body = null;
+      method = #get;
+      transform = null;
+    };
+    
+    let userResponse = await ic.http_request(userRequest);
+    if (userResponse.status != 200) {
+      return "Failed to get Medium user info: " # Nat.toText(userResponse.status);
+    };
+    
+    // For demo, use a mock user ID (in real implementation, parse the JSON response)
+    let userId = "1234567890abcdef";
+    
+    let articleRequest: HttpRequestArgs = {
+      url = "https://api.medium.com/v1/users/" # userId # "/posts";
+      max_response_bytes = ?4096;
+      headers = [
+        { name = "Authorization"; value = "Bearer " # accessToken },
+        { name = "Content-Type"; value = "application/json" },
+        { name = "Accept"; value = "application/json" }
+      ];
+      body = ?Blob.toArray(Text.encodeUtf8(
+        "{\"title\": \"" # title # "\"," #
+        "\"contentFormat\": \"html\"," #
+        "\"content\": \"" # content # "\"," #
+        "\"publishStatus\": \"" # publishStatus # "\"}"
+      ));
+      method = #post;
+      transform = null;
+    };
+    
+    let response = await ic.http_request(articleRequest);
+    if (response.status == 201) {
+      "Medium article posted successfully"
+    } else {
+      "Failed to post Medium article: " # Nat.toText(response.status)
+    }
+  };
+
+  public shared func scheduleMediumPost(title: Text, content: Text, _scheduledAt: Int, accessToken: Text): async Text {
+    // For demo: immediately post to Medium (replace with real scheduling logic)
+    await testMediumPost(title, content, accessToken, "draft");
   }
-}
