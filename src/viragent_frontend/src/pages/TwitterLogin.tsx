@@ -7,12 +7,20 @@ export default function TwitterLogin() {
   const isInstagram = location.pathname.includes("instagram");
   const isLinkedIn = location.pathname.includes("linkedin");
   const isFacebook = location.pathname.includes("facebook");
+  const isMedium = location.pathname.includes("medium");
 
   const handleLogin = () => {
+    if (isMedium) {
+      // Redirect to dedicated Medium login page
+      window.location.href = "/auth/medium";
+      return;
+    }
+
     if (isInstagram || isLinkedIn || isFacebook) {
       alert("OAuth2 flow for this platform is coming soon!");
       return;
     }
+
     const { code_challenge, code_verifier } = pkceChallenge();
     localStorage.setItem("twitter_code_verifier", code_verifier);
 
@@ -33,6 +41,7 @@ export default function TwitterLogin() {
   if (isInstagram) platform = "Instagram";
   if (isLinkedIn) platform = "LinkedIn";
   if (isFacebook) platform = "Facebook";
+  if (isMedium) platform = "Medium";
 
   return (
     <div style={{ padding: 32 }}>
@@ -42,7 +51,14 @@ export default function TwitterLogin() {
       </button>
       {(isInstagram || isLinkedIn || isFacebook) && (
         <div style={{ marginTop: 16, color: "#888" }}>
-          <b>Coming soon:</b> OAuth2 flow for {platform} will be available in a future update.
+          <b>Coming soon:</b> OAuth2 flow for {platform} will be available in a
+          future update.
+        </div>
+      )}
+      {isMedium && (
+        <div style={{ marginTop: 16, color: "#00AB6C" }}>
+          <b>Note:</b> You'll be redirected to the dedicated Medium
+          authentication page.
         </div>
       )}
     </div>

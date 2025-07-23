@@ -10,6 +10,7 @@ canister_ids.json
 .env.development
 .env.test
 .env.production
+.env.example
 
 # Node.js and npm
 node_modules/

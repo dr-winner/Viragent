@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Viragent API Key Setup</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+      }
+      .container {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        padding: 30px;
+        margin: 20px 0;
+      }
+      h1,
+      h2 {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+      .api-section {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 15px 0;
+      }
+      .form-group {
+        margin: 15px 0;
+      }
+      label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+      input,
+      select,
+      textarea {
+        width: 100%;
+        padding: 10px;
+        border: none;
+        border-radius: 5px;
+        background: rgba(255, 255, 255, 0.9);
+        color: #333;
+      }
+      button {
+        background: #4caf50;
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        margin: 10px 5px;
+      }
+      button:hover {
+        background: #45a049;
+      }
+      .test-button {
+        background: #2196f3;
+      }
+      .test-button:hover {
+        background: #1976d2;
+      }
+      .result {
+        margin: 10px 0;
+        padding: 10px;
+        border-radius: 5px;
+        background: rgba(255, 255, 255, 0.1);
+      }
+      .success {
+        background: rgba(76, 175, 80, 0.3);
+      }
+      .error {
+        background: rgba(244, 67, 54, 0.3);
+      }
+      .code {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 10px;
+        border-radius: 5px;
+        font-family: monospace;
+        margin: 10px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🚀 Viragent API Key Setup</h1>
+      <p style="text-align: center">
+        Configure your AI and Social Platform API keys for Viragent
+      </p>
+
+      <!-- AI Services Section -->
+      <div class="api-section">
+        <h2>🤖 AI Services Configuration</h2>
+
+        <div class="form-group">
+          <label for="aiProvider">Choose AI Provider:</label>
+          <select id="aiProvider">
+            <option value="OpenAI">RapidAPI ChatGPT-42 (Recommended)</option>
+            <option value="Gemini">Google Gemini 2.0 Flash</option>
+            <option value="Claude">Claude (Anthropic)</option>
+            <option value="Mock">Mock (For Testing)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="aiApiKey">API Key:</label>
+          <input
+            type="password"
+            id="aiApiKey"
+            placeholder="Enter your API key"
+          />
+          <small style="display: block; margin-top: 5px; opacity: 0.8">
+            Your RapidAPI key:
+            fac4c08d17mshb7a8c21998b7c81p1881dfjsn5382a9c8bb8d<br />
+            Your Gemini key: AIzaSyDnJU9Me_USHali0BApTjY9fkxfU-KP4dc
+          </small>
+        </div>
+
+        <button onclick="setAIConfig()">Configure AI Provider</button>
+        <button class="test-button" onclick="testAIGeneration()">
+          Test AI Generation
+        </button>
+
+        <div id="aiResult" class="result" style="display: none"></div>
+      </div>
+
+      <!-- Quick Test Section -->
+      <div class="api-section">
+        <h2>🧪 Quick Test</h2>
+        <div class="form-group">
+          <label for="testPrompt">Test Prompt:</label>
+          <textarea
+            id="testPrompt"
+            rows="3"
+            placeholder="Enter a prompt to test AI generation..."
+          >
+Create an engaging Instagram post about coffee that appeals to young professionals</textarea
+          >
+        </div>
+        <button class="test-button" onclick="runQuickTest()">
+          Generate Content
+        </button>
+        <div id="testResult" class="result" style="display: none"></div>
+      </div>
+
+      <!-- Instructions Section -->
+      <div class="api-section">
+        <h2>📋 Setup Instructions</h2>
+        <h3>Step 1: Register in Viragent</h3>
+        <button onclick="registerUser()">
+          Auto-Register with Internet Identity
+        </button>
+        <div id="registerResult" class="result" style="display: none"></div>
+
+        <h3>Step 2: Use the Code Examples</h3>
+        <div class="code">
+          // Browser Console Commands: // 1. Set RapidAPI ChatGPT key await
+          backendService.setAIConfig('OpenAI',
+          'fac4c08d17mshb7a8c21998b7c81p1881dfjsn5382a9c8bb8d'); // 2. Set
+          Gemini key await backendService.setAIConfig('Gemini',
+          'AIzaSyDnJU9Me_USHali0BApTjY9fkxfU-KP4dc'); // 3. Test content
+          generation await backendService.generateEnhancedAIContent(
+          'test-media-id', 'Create engaging social media content about coffee',
+          'professional', 'instagram', 'OpenAI' );
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Backend service URL - you'll need to update this with your actual canister ID
+      const BACKEND_CANISTER_ID = "uxrrr-q7777-77774-qaaaq-cai";
+      const BACKEND_URL = `http://${BACKEND_CANISTER_ID}.localhost:4943`;
+
+      async function setAIConfig() {
+        const provider = document.getElementById("aiProvider").value;
+        const apiKey = document.getElementById("aiApiKey").value;
+        const resultDiv = document.getElementById("aiResult");
+
+        if (!apiKey) {
+          showResult(resultDiv, "Please enter an API key", "error");
+          return;
+        }
+
+        try {
+          // You would call your backend service here
+          // For now, just show what the call would look like
+          showResult(
+            resultDiv,
+            `Configuration set for ${provider} with key: ${apiKey.substring(
+              0,
+              10
+            )}...`,
+            "success"
+          );
+
+          // Show the actual command
+          const command = `await backendService.setAIConfig('${provider}', '${apiKey}');`;
+          showResult(
+            resultDiv,
+            `Run this in browser console:\n${command}`,
+            "success"
+          );
+        } catch (error) {
+          showResult(resultDiv, `Error: ${error.message}`, "error");
+        }
+      }
+
+      async function testAIGeneration() {
+        const provider = document.getElementById("aiProvider").value;
+        const resultDiv = document.getElementById("aiResult");
+
+        const command = `await backendService.generateEnhancedAIContent('test-media', 'Create engaging content', 'professional', 'instagram', '${provider}');`;
+        showResult(resultDiv, `Test command:\n${command}`, "success");
+      }
+
+      async function runQuickTest() {
+        const prompt = document.getElementById("testPrompt").value;
+        const resultDiv = document.getElementById("testResult");
+
+        const command = `await backendService.generateEnhancedAIContent('test-media', '${prompt}', 'engaging', 'instagram', 'OpenAI');`;
+        showResult(resultDiv, `Quick test command:\n${command}`, "success");
+      }
+
+      async function registerUser() {
+        const resultDiv = document.getElementById("registerResult");
+        const command = `await backendService.autoRegister();`;
+        showResult(resultDiv, `Registration command:\n${command}`, "success");
+      }
+
+      function showResult(div, message, type) {
+        div.style.display = "block";
+        div.className = `result ${type}`;
+        div.innerHTML = message.replace(/\n/g, "<br>");
+      }
+
+      // Auto-fill the API keys
+      document.addEventListener("DOMContentLoaded", function () {
+        const provider = document.getElementById("aiProvider");
+        const apiKeyInput = document.getElementById("aiApiKey");
+
+        provider.addEventListener("change", function () {
+          if (this.value === "OpenAI") {
+            apiKeyInput.value =
+              "fac4c08d17mshb7a8c21998b7c81p1881dfjsn5382a9c8bb8d";
+          } else if (this.value === "Gemini") {
+            apiKeyInput.value = "AIzaSyDnJU9Me_USHali0BApTjY9fkxfU-KP4dc";
+          } else {
+            apiKeyInput.value = "";
+          }
+        });
+
+        // Auto-fill RapidAPI key by default
+        apiKeyInput.value =
+          "fac4c08d17mshb7a8c21998b7c81p1881dfjsn5382a9c8bb8d";
+      });
+    </script>
+  </body>
+</html>

@@ -17,6 +17,8 @@ import TwitterLogin from "./pages/TwitterLogin";
 import TwitterCallback from "./pages/TwitterCallback";
 import TwitterTest from "./pages/TwitterTest";
 import SocialAccounts from "./pages/SocialAccounts";
+import MediumLogin from "./pages/MediumLogin";
+import MediumCallback from "./pages/MediumCallback";
 
 const queryClient = new QueryClient();
 
@@ -32,40 +34,45 @@ const App = () => (
             <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/auth/twitter" element={<TwitterLogin />} />
-            <Route path="/auth/twitter/callback" element={<TwitterCallback />} />
+            <Route
+              path="/auth/twitter/callback"
+              element={<TwitterCallback />}
+            />
+            <Route path="/auth/medium" element={<MediumLogin />} />
+            <Route path="/auth/medium/callback" element={<MediumCallback />} />
             <Route path="/twitter-test" element={<TwitterTest />} />
             <Route path="/social-accounts" element={<SocialAccounts />} />
-            <Route 
-              path="/dashboard" 
+            <Route
+              path="/dashboard"
               element={
                 <ProtectedRoute>
                   <Dashboard />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/upload" 
+            <Route
+              path="/upload"
               element={
                 <ProtectedRoute>
                   <Upload />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/ai-review" 
+            <Route
+              path="/ai-review"
               element={
                 <ProtectedRoute>
                   <AIReview />
                 </ProtectedRoute>
-              } 
+              }
             />
-            <Route 
-              path="/schedule" 
+            <Route
+              path="/schedule"
               element={
                 <ProtectedRoute>
                   <Schedule />
                 </ProtectedRoute>
-              } 
+              }
             />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
