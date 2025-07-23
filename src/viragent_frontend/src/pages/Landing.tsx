@@ -35,25 +35,7 @@ const Landing = () => {
   };
 
   useEffect(() => {
-    // Hero animations
-    const tl = gsap.timeline();
-    
-    tl.fromTo('.hero-title', 
-      { opacity: 0, y: 100 },
-      { opacity: 1, y: 0, duration: 1, ease: 'power3.out' }
-    )
-    .fromTo('.hero-subtitle', 
-      { opacity: 0, y: 50 },
-      { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' },
-      '-=0.5'
-    )
-    .fromTo('.hero-buttons', 
-      { opacity: 0, y: 30 },
-      { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' },
-      '-=0.3'
-    );
-
-    // Features scroll animation
+    // Features scroll animation only - removed conflicting hero animations
     ScrollTrigger.create({
       trigger: '.features-grid',
       start: 'top 80%',
@@ -185,6 +167,8 @@ const Landing = () => {
           <motion.div
             className="hero-title"
             initial={{ opacity: 0, y: 100 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, ease: "easeOut" }}
           >
             <h1 className="text-6xl md:text-8xl font-space-grotesk font-bold mb-6">
               <span className="gradient-text">Viragent</span>
@@ -197,6 +181,8 @@ const Landing = () => {
           <motion.p
             className="hero-subtitle text-xl md:text-2xl text-muted-foreground mb-12 max-w-3xl mx-auto leading-relaxed"
             initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
           >
             Automate your social media with AI-powered content generation, smart scheduling, 
             and viral prediction—all built on the secure Internet Computer blockchain.
@@ -205,6 +191,8 @@ const Landing = () => {
           <motion.div 
             className="hero-buttons flex flex-col sm:flex-row gap-6 justify-center items-center"
             initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.6, ease: "easeOut" }}
           >
             <Button variant="hero" size="xl" className="group" onClick={handleGetStarted}>
               {isAuthenticated ? 'Go to Dashboard' : 'Launch App'}
@@ -313,12 +301,13 @@ const Landing = () => {
       {/* CTA Section */}
       <section className="py-32 px-6 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-primary opacity-10" />
-        <div className="relative z-10 max-w-4xl mx-auto text-center">
+        <div className="relative z-20 max-w-4xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
+            className="relative z-30"
           >
             <h2 className="text-5xl font-space-grotesk font-bold mb-6">
               Ready to go <span className="gradient-accent-text">viral</span>?
@@ -326,7 +315,7 @@ const Landing = () => {
             <p className="text-xl text-muted-foreground mb-12">
               Join thousands of creators and brands already using Viragent to scale their social media presence.
             </p>
-            <Button variant="hero" size="xl" className="group" onClick={handleGetStarted}>
+            <Button variant="hero" size="xl" className="group relative z-40" onClick={handleGetStarted}>
               {isAuthenticated ? 'Go to Dashboard' : 'Get Started Free'}
               <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
             </Button>
