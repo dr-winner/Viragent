@@ -16,7 +16,6 @@ import AIOutput "./ai_output";
 import Schedule "./schedule";
 import Dispatch "./dispatch";
 import Analytics "./analytics";
-import LLM "mo:llm";
 import Config "./config";
 
 actor class ViragentBackend() = this {
@@ -71,8 +70,9 @@ actor class ViragentBackend() = this {
   // System initialization
   private stable var initialized = false;
 
-  // Add IC-LLM canister principal (replace with actual canister ID)
-  private stable var icllmCanisterId: Principal = Principal.fromText("aaaaa-aa"); // TODO: Replace with real IC-LLM canister ID
+  // AI Service Configuration - GitHub Models Only (Free!)
+  private stable var githubToken: Text = "";
+  private stable var defaultAIProvider: AIService.AIProvider = #GitHub;
 
   // Data stores
   private var userStore = User.createStore();
@@ -82,47 +82,52 @@ actor class ViragentBackend() = this {
   private var scheduleStore = Schedule.createStore();
   private var analyticsStore = Analytics.createStore();
 
-  // Initialize the system with optional environment configuration
-  public func init(openAI_key: ?Text, claude_key: ?Text): async Text {
+  // Initialize the system with GitHub token for free AI
+  public func init(github_token: ?Text): async Text {
     if (not initialized) {
       initialized := true;
       
-      // Set API keys from environment if provided
-      switch (openAI_key) {
-        case (?key) {
-          if (Config.isValidOpenAIKey(key)) {
-            // openAIApiKey := key; // Removed
-            // defaultAIProvider := #OpenAI; // Removed
-            Debug.print("OpenAI API key configured from environment");
+      // Set GitHub token from environment if provided
+      switch (github_token) {
+        case (?token) {
+          if (Config.isValidGitHubToken(token)) {
+            githubToken := token;
+            defaultAIProvider := #GitHub;
+            Debug.print("GitHub token configured - FREE AI enabled!");
+          } else {
+            Debug.print("Invalid GitHub token provided");
           };
         };
-        case null { };
-      };
-      
-      switch (claude_key) {
-        case (?key) {
-          if (Config.isValidClaudeKey(key)) {
-            // claudeApiKey := key; // Removed
-            Debug.print("Claude API key configured from environment");
-          };
+        case null { 
+          Debug.print("No GitHub token provided - AI generation will be disabled");
         };
-        case null { };
       };
       
-      Debug.print("Viragent Backend initialized with Internet Identity authentication");
-      return "System initialized successfully with Internet Identity";
+      Debug.print("Viragent Backend initialized with GitHub Models (FREE AI)");
+      return "System initialized successfully with FREE GitHub AI";
     };
     return "System already initialized";
   };
 
   // Simplified init for backward compatibility
   public func initSimple(): async Text {
-    await init(null, null);
+    await init(null);
   };
 
-  // AI Configuration Management
-  // Remove OpenAI/Claude config and keys
-  // Remove setAIConfig, getAIProvider
+  // AI Configuration Management - GitHub Only
+  public shared(msg) func setAIConfig(provider: AIService.AIProvider, apiKey: Text): async Result.Result<Text, Text> {
+    if (not User.isRegistered(userStore, msg.caller)) {
+      return #err("User not registered");
+    };
+    
+    switch (provider) {
+      case (#GitHub) {
+        githubToken := apiKey;
+        defaultAIProvider := #GitHub;
+        #ok("GitHub token configured successfully - FREE AI enabled!")
+      };
+    }
+  };
 
   // AI Content Generation (using LLM library directly)
   public shared(msg) func generateAIContent(
@@ -142,22 +147,44 @@ actor class ViragentBackend() = this {
           return #err("Unauthorized: Cannot generate content for media owned by another user");
         };
         
-        let llmPrompt = "Create a caption for " # platform # " with tone " # tone # ": " # prompt;
-        let aiText = await LLM.prompt(#Llama3_1_8B, llmPrompt);
-        
-        let output: AIOutput.AIOutput = {
-          mediaId = mediaId;
-          caption = aiText;
-          hashtags = ["#AI", "#ICLLM"];
-          score = 90.0;
-          generatedAt = Time.now();
+        let request: AIService.AIRequest = {
+          prompt = prompt;
+          tone = tone;
+          platform = platform;
+          mediaType = item.mediaType;
         };
         
-        let saveResult = AIOutput.saveOutput(aiOutputStore, output);
-        #ok("AI content generated successfully: " # saveResult)
+        // Get GitHub token for FREE AI
+        let apiKey = githubToken;
+        
+        if (apiKey == "") {
+          return #err("GitHub token not configured. Please set your GitHub token for FREE AI access.");
+        };
+        
+        // Generate content using GitHub Models (FREE!)
+        let result = await AIService.generateContent(defaultAIProvider, apiKey, request, ic.http_request);
+        
+        switch (result) {
+          case (#ok(aiResponse)) {
+            let output: AIOutput.AIOutput = {
+              mediaId = mediaId;
+              caption = aiResponse.caption;
+              hashtags = aiResponse.hashtags;
+              score = aiResponse.score;
+              generatedAt = Time.now();
+            };
+            
+            let saveResult = AIOutput.saveOutput(aiOutputStore, output);
+            #ok("AI content generated successfully: " # saveResult)
+          };
+          case (#err(error)) {
+            #err("AI generation failed: " # error)
+          };
+        }
       };
       case null #err("Media not found");
     }
+  };
   };
 
   // User Management (Internet Identity based)

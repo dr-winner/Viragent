@@ -1,26 +1,19 @@
 module Config {
-  // Configuration for AI providers
+  // Configuration for GitHub Models (Free AI)
   public type AIConfig = {
-    openAIApiKey: Text;
-    claudeApiKey: Text;
+    githubToken: Text;
   };
 
   // Load configuration from environment or defaults
   public func loadConfig(): AIConfig {
-    // In a real deployment, these would come from canister init args or environment
-    // For now, we'll use the init method to set them
+    // In a real deployment, this would come from canister init args or environment
     {
-      openAIApiKey = "";
-      claudeApiKey = "";
+      githubToken = "";
     }
   };
 
-  // Validate API key format
-  public func isValidOpenAIKey(key: Text): Bool {
-    key != "" and (key.size() > 20) // Basic validation
-  };
-
-  public func isValidClaudeKey(key: Text): Bool {
-    key != "" and (key.size() > 20) // Basic validation
+  // Validate GitHub token format
+  public func isValidGitHubToken(token: Text): Bool {
+    token != "" and (token.size() > 20) // Basic validation for GitHub tokens
   };
 }

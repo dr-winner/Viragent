@@ -100,7 +100,7 @@ const Landing = () => {
 
   const partners = [
     { name: 'Internet Computer', logo: '◇' },
-    { name: 'OpenAI', logo: '⚡' },
+    { name: 'GitHub Models', logo: '⚡' },
     { name: 'Twitter API', logo: '🐦' },
     { name: 'Meta', logo: '📘' },
     { name: 'TikTok', logo: '🎵' },
