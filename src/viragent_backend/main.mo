@@ -16,7 +16,7 @@ import AIOutput "./ai_output";
 import Schedule "./schedule";
 import Dispatch "./dispatch";
 import Analytics "./analytics";
-import AIService "./ai_service";
+import LLM "mo:llm";
 import Config "./config";
 
 actor class ViragentBackend() = this {
@@ -71,10 +71,8 @@ actor class ViragentBackend() = this {
   // System initialization
   private stable var initialized = false;
 
-  // AI Service Configuration
-  private stable var openAIApiKey: Text = "";
-  private stable var claudeApiKey: Text = "";
-  private stable var defaultAIProvider: AIService.AIProvider = #OpenAI;
+  // Add IC-LLM canister principal (replace with actual canister ID)
+  private stable var icllmCanisterId: Principal = Principal.fromText("aaaaa-aa"); // TODO: Replace with real IC-LLM canister ID
 
   // Data stores
   private var userStore = User.createStore();
@@ -93,8 +91,8 @@ actor class ViragentBackend() = this {
       switch (openAI_key) {
         case (?key) {
           if (Config.isValidOpenAIKey(key)) {
-            openAIApiKey := key;
-            defaultAIProvider := #OpenAI;
+            // openAIApiKey := key; // Removed
+            // defaultAIProvider := #OpenAI; // Removed
             Debug.print("OpenAI API key configured from environment");
           };
         };
@@ -104,7 +102,7 @@ actor class ViragentBackend() = this {
       switch (claude_key) {
         case (?key) {
           if (Config.isValidClaudeKey(key)) {
-            claudeApiKey := key;
+            // claudeApiKey := key; // Removed
             Debug.print("Claude API key configured from environment");
           };
         };
@@ -123,30 +121,10 @@ actor class ViragentBackend() = this {
   };
 
   // AI Configuration Management
-  public shared(msg) func setAIConfig(provider: AIService.AIProvider, apiKey: Text): async Result.Result<Text, Text> {
-    if (not User.isRegistered(userStore, msg.caller)) {
-      return #err("User not registered");
-    };
-    
-    switch (provider) {
-      case (#OpenAI) {
-        openAIApiKey := apiKey;
-        defaultAIProvider := #OpenAI;
-        #ok("OpenAI API key configured successfully")
-      };
-      case (#Claude) {
-        claudeApiKey := apiKey;
-        defaultAIProvider := #Claude;
-        #ok("Claude API key configured successfully")
-      };
-    }
-  };
+  // Remove OpenAI/Claude config and keys
+  // Remove setAIConfig, getAIProvider
 
-  public query func getAIProvider(): async AIService.AIProvider {
-    defaultAIProvider
-  };
-
-  // AI Content Generation (using real AI APIs)
+  // AI Content Generation (using LLM library directly)
   public shared(msg) func generateAIContent(
     mediaId: Text,
     prompt: Text,
@@ -164,39 +142,19 @@ actor class ViragentBackend() = this {
           return #err("Unauthorized: Cannot generate content for media owned by another user");
         };
         
-        let request: AIService.AIRequest = {
-          prompt = prompt;
-          tone = tone;
-          platform = platform;
-          mediaType = item.mediaType;
+        let llmPrompt = "Create a caption for " # platform # " with tone " # tone # ": " # prompt;
+        let aiText = await LLM.prompt(#Llama3_1_8B, llmPrompt);
+        
+        let output: AIOutput.AIOutput = {
+          mediaId = mediaId;
+          caption = aiText;
+          hashtags = ["#AI", "#ICLLM"];
+          score = 90.0;
+          generatedAt = Time.now();
         };
         
-        // Get appropriate API key based on provider
-        let apiKey = switch (defaultAIProvider) {
-          case (#OpenAI) openAIApiKey;
-          case (#Claude) claudeApiKey;
-        };
-        
-        // Generate content using configured AI service
-        let result = await AIService.generateContent(defaultAIProvider, apiKey, request, ic.http_request);
-        
-        switch (result) {
-          case (#ok(aiResponse)) {
-            let output: AIOutput.AIOutput = {
-              mediaId = mediaId;
-              caption = aiResponse.caption;
-              hashtags = aiResponse.hashtags;
-              score = aiResponse.score;
-              generatedAt = Time.now();
-            };
-            
-            let saveResult = AIOutput.saveOutput(aiOutputStore, output);
-            #ok("AI content generated successfully: " # saveResult)
-          };
-          case (#err(error)) {
-            #err("AI generation failed: " # error)
-          };
-        }
+        let saveResult = AIOutput.saveOutput(aiOutputStore, output);
+        #ok("AI content generated successfully: " # saveResult)
       };
       case null #err("Media not found");
     }
@@ -336,7 +294,12 @@ actor class ViragentBackend() = this {
     bestTones: [Text];
     features: [Text];
   } {
-    AIService.getPlatformRecommendations(platform)
+    {
+      maxCaptionLength = 2200;
+      optimalHashtagCount = 5;
+      bestTones = ["casual", "professional"];
+      features = ["Engaging content", "Relevant hashtags"];
+    }
   };
 
   public query(msg) func getOutput(mediaId: Text): async ?AIOutput.AIOutput {

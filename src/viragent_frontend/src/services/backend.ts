@@ -26,8 +26,8 @@ class ViragentBackendService {
 
   // Initialize the service with identity
   async init(identity: Identity): Promise<void> {
-    const host = process.env.NODE_ENV === 'production' 
-      ? 'https://ic0.app' 
+    const host = import.meta.env.MODE === 'production'
+      ? 'https://ic0.app'
       : 'http://localhost:4943';
 
     this.agent = new HttpAgent({ 

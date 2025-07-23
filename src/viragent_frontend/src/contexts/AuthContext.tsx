@@ -39,7 +39,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const { toast } = useToast();
 
   // Internet Computer mainnet identity provider
-  const identityProvider = process.env.NODE_ENV === 'production' 
+  const identityProvider = import.meta.env.MODE === 'production'
     ? 'https://identity.ic0.app'
     : 'http://localhost:4943?canisterId=rdmx6-jaaaa-aaaaa-aaadq-cai';
 

@@ -16,6 +16,7 @@ import NotFound from "./pages/NotFound";
 import TwitterLogin from "./pages/TwitterLogin";
 import TwitterCallback from "./pages/TwitterCallback";
 import TwitterTest from "./pages/TwitterTest";
+import SocialAccounts from "./pages/SocialAccounts";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/auth/twitter" element={<TwitterLogin />} />
             <Route path="/auth/twitter/callback" element={<TwitterCallback />} />
             <Route path="/twitter-test" element={<TwitterTest />} />
+            <Route path="/social-accounts" element={<SocialAccounts />} />
             <Route 
               path="/dashboard" 
               element={

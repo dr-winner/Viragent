@@ -1,8 +1,18 @@
 import React from "react";
 import pkceChallenge from "pkce-challenge";
+import { useLocation } from "react-router-dom";
 
 export default function TwitterLogin() {
+  const location = useLocation();
+  const isInstagram = location.pathname.includes("instagram");
+  const isLinkedIn = location.pathname.includes("linkedin");
+  const isFacebook = location.pathname.includes("facebook");
+
   const handleLogin = () => {
+    if (isInstagram || isLinkedIn || isFacebook) {
+      alert("OAuth2 flow for this platform is coming soon!");
+      return;
+    }
     const { code_challenge, code_verifier } = pkceChallenge();
     localStorage.setItem("twitter_code_verifier", code_verifier);
 
@@ -19,12 +29,22 @@ export default function TwitterLogin() {
     window.location.href = `https://twitter.com/i/oauth2/authorize?${params.toString()}`;
   };
 
+  let platform = "Twitter";
+  if (isInstagram) platform = "Instagram";
+  if (isLinkedIn) platform = "LinkedIn";
+  if (isFacebook) platform = "Facebook";
+
   return (
     <div style={{ padding: 32 }}>
-      <h2>Connect to Twitter</h2>
+      <h2>Connect to {platform}</h2>
       <button onClick={handleLogin} style={{ padding: 12, fontSize: 16 }}>
-        Connect to Twitter
+        Connect to {platform}
       </button>
+      {(isInstagram || isLinkedIn || isFacebook) && (
+        <div style={{ marginTop: 16, color: "#888" }}>
+          <b>Coming soon:</b> OAuth2 flow for {platform} will be available in a future update.
+        </div>
+      )}
     </div>
   );
 } 
