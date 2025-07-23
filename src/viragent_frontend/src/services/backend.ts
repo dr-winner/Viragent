@@ -310,6 +310,83 @@ class ViragentBackendService {
     }
   }
 
+  // New AI Content Generation Methods
+  async generateAIContent(
+    mediaId: string, 
+    prompt: string, 
+    tone: string, 
+    platform: string
+  ): Promise<ApiResult<string>> {
+    try {
+      const actor = this.ensureActor();
+      const result = await actor.generateAIContent(mediaId, prompt, tone, platform);
+      
+      if ('ok' in result) {
+        return { success: true, data: result.ok };
+      } else {
+        return { success: false, error: result.err };
+      }
+    } catch (error) {
+      return { success: false, error: String(error) };
+    }
+  }
+
+  async generateSmartContent(mediaId: string, prompt: string): Promise<ApiResult<string>> {
+    try {
+      const actor = this.ensureActor();
+      const result = await actor.generateSmartContent(mediaId, prompt);
+      
+      if ('ok' in result) {
+        return { success: true, data: result.ok };
+      } else {
+        return { success: false, error: result.err };
+      }
+    } catch (error) {
+      return { success: false, error: String(error) };
+    }
+  }
+
+  async setAIConfig(provider: string, apiKey: string): Promise<ApiResult<string>> {
+    try {
+      const actor = this.ensureActor();
+      // Convert string to the appropriate variant
+      let providerVariant: any;
+      switch (provider.toLowerCase()) {
+        case 'openai':
+          providerVariant = { 'OpenAI': null };
+          break;
+        case 'github':
+          providerVariant = { 'GitHub': null };
+          break;
+        case 'claude':
+          providerVariant = { 'Claude': null };
+          break;
+        default:
+          return { success: false, error: 'Unsupported AI provider' };
+      }
+      
+      const result = await actor.setAIConfig(providerVariant, apiKey);
+      
+      if ('ok' in result) {
+        return { success: true, data: result.ok };
+      } else {
+        return { success: false, error: result.err };
+      }
+    } catch (error) {
+      return { success: false, error: String(error) };
+    }
+  }
+
+  async initWithOpenAIKey(apiKey: string): Promise<ApiResult<string>> {
+    try {
+      const actor = this.ensureActor();
+      const result = await actor.initWithOpenAIKey(apiKey);
+      return { success: true, data: result };
+    } catch (error) {
+      return { success: false, error: String(error) };
+    }
+  }
+
   // Scheduling
   async schedulePost(post: ScheduledPost): Promise<ApiResult<string>> {
     try {
