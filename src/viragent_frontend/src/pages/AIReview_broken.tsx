@@ -257,12 +257,56 @@ const AIReview = () => {
                           <TrendingUp className="h-3 w-3 text-success" />
                         )}
                       </div>
-                      <Badge 
-                        variant="secondary" 
-                        className={`text-xs ${getPopularityColor(hashtag.popularity)}`}
-                      >
+                      <Badge className={`text-xs ${getPopularityColor(hashtag.popularity)}`}>
                         {hashtag.popularity}
                       </Badge>
+                    </motion.div>
+                  ))}
+                </div>
+
+                <div className="mt-4 p-3 bg-muted/30 rounded-lg">
+                  <p className="text-xs text-muted-foreground">
+                    💡 Tip: Mix high and medium popularity hashtags for optimal reach
+                  </p>
+                </div>
+              </Card>
+            </motion.div>
+
+            {/* Optimal Posting Times */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+            >
+              <Card className="web3-card">
+                <h3 className="text-xl font-space-grotesk font-semibold mb-6 flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-web3-purple" />
+                  Optimal Posting Times
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {suggestedTimes.map((time, index) => (
+                    <motion.div
+                      key={index}
+                      className="glass-card p-4 hover:bg-card/90 transition-all duration-200 cursor-pointer group"
+                      whileHover={{ y: -2 }}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <span className="text-xl">{time.icon}</span>
+                          <div>
+                            <p className="font-medium">{time.platform}</p>
+                            <p className="text-sm text-muted-foreground">{time.time}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-medium text-success">{time.engagement}</p>
+                          <p className="text-xs text-muted-foreground">engagement</p>
+                        </div>
+                      </div>
                     </motion.div>
                   ))}
                 </div>
@@ -279,83 +323,29 @@ const AIReview = () => {
               transition={{ duration: 0.6, delay: 0.1 }}
             >
               <Card className="web3-card text-center">
-                <div className="flex items-center justify-center gap-2 mb-4">
-                  <Zap className="h-5 w-5 text-primary" />
-                  <h3 className="text-lg font-space-grotesk font-semibold">Viral Score</h3>
-                </div>
-                
-                <div className={`text-4xl font-bold mb-2 ${getViralScoreColor(viralScore)}`}>
-                  {viralScore}
-                </div>
-                <p className="text-sm text-muted-foreground mb-4">out of 10</p>
-                
-                <Progress value={viralScore * 10} className="h-2 mb-4" />
-                
-                <Badge variant="secondary" className="bg-primary/20 text-primary">
-                  High Engagement Potential
-                </Badge>
-              </Card>
-            </motion.div>
-
-            {/* Platform Selection & Scheduling */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-            >
-              <Card className="web3-card">
-                <h3 className="text-lg font-space-grotesk font-semibold mb-4 flex items-center gap-2">
-                  <Share2 className="h-5 w-5 text-accent" />
-                  Platform Selection
+                <h3 className="text-lg font-space-grotesk font-semibold mb-4 flex items-center justify-center gap-2">
+                  <Zap className="h-5 w-5 text-accent" />
+                  Viral Score
                 </h3>
-
-                <div className="space-y-3 mb-4">
-                  {[
-                    { id: 'twitter', name: 'Twitter', icon: '🐦', color: '#1DA1F2' },
-                    { id: 'instagram', name: 'Instagram', icon: '📷', color: '#E4405F' },
-                    { id: 'linkedin', name: 'LinkedIn', icon: '💼', color: '#0077B5' },
-                    { id: 'tiktok', name: 'TikTok', icon: '🎵', color: '#FF0050' }
-                  ].map((platform) => (
-                    <div
-                      key={platform.id}
-                      className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${
-                        selectedPlatforms.includes(platform.id)
-                          ? 'border-primary bg-primary/10'
-                          : 'border-border hover:border-primary/50'
-                      }`}
-                      onClick={() => {
-                        setSelectedPlatforms(prev => 
-                          prev.includes(platform.id)
-                            ? prev.filter(id => id !== platform.id)
-                            : [...prev, platform.id]
-                        );
-                      }}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="text-lg">{platform.icon}</span>
-                        <span className="font-medium">{platform.name}</span>
-                      </div>
-                      {selectedPlatforms.includes(platform.id) && (
-                        <Check className="h-4 w-4 text-primary" />
-                      )}
-                    </div>
-                  ))}
+                
+                <div className="relative mb-4">
+                  <div className="w-24 h-24 mx-auto rounded-full border-4 border-muted flex items-center justify-center bg-gradient-primary">
+                    <span className={`text-2xl font-bold ${getViralScoreColor(viralScore)}`}>
+                      {viralScore}
+                    </span>
+                  </div>
+                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2">
+                    <Badge className="bg-accent text-accent-foreground">
+                      /10
+                    </Badge>
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Button variant="glass" className="w-full justify-start group">
-                    <Eye className="mr-2 h-4 w-4 group-hover:scale-110 transition-transform" />
-                    Preview on Platforms
-                  </Button>
-                  <Button variant="glass" className="w-full justify-start group">
-                    <Share2 className="mr-2 h-4 w-4 group-hover:scale-110 transition-transform" />
-                    Share for Review
-                  </Button>
-                  <Button variant="glass" className="w-full justify-start group">
-                    <Sparkles className="mr-2 h-4 w-4 group-hover:scale-110 transition-transform" />
-                    Alternative Versions
-                  </Button>
-                </div>
+                <Progress value={viralScore * 10} className="mb-4" />
+                
+                <p className="text-sm text-muted-foreground">
+                  High potential for viral engagement
+                </p>
               </Card>
             </motion.div>
 
@@ -385,10 +375,38 @@ const AIReview = () => {
                     <span className="font-medium">{engagementPrediction.comments}</span>
                   </div>
                   <Separator />
-                  <div className="flex items-center justify-between font-medium">
-                    <span className="text-muted-foreground">Total Reach</span>
+                  <div className="flex items-center justify-between font-semibold">
+                    <span className="text-primary">Est. Reach</span>
                     <span className="text-primary">{engagementPrediction.reach.toLocaleString()}</span>
                   </div>
+                </div>
+              </Card>
+            </motion.div>
+
+            {/* Quick Actions */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+            >
+              <Card className="web3-card">
+                <h3 className="text-lg font-space-grotesk font-semibold mb-4">
+                  Quick Actions
+                </h3>
+
+                <div className="space-y-3">
+                  <Button variant="glass" className="w-full justify-start group">
+                    <Eye className="mr-2 h-4 w-4 group-hover:scale-110 transition-transform" />
+                    Preview Post
+                  </Button>
+                  <Button variant="glass" className="w-full justify-start group">
+                    <Share2 className="mr-2 h-4 w-4 group-hover:scale-110 transition-transform" />
+                    Share for Review
+                  </Button>
+                  <Button variant="glass" className="w-full justify-start group">
+                    <Sparkles className="mr-2 h-4 w-4 group-hover:scale-110 transition-transform" />
+                    Alternative Versions
+                  </Button>
                 </div>
               </Card>
             </motion.div>
@@ -399,25 +417,10 @@ const AIReview = () => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
             >
-              <Button 
-                variant="web3" 
-                size="lg" 
-                className="w-full group"
-                onClick={handleSchedulePost}
-                disabled={selectedPlatforms.length === 0 || schedulePost.isPending}
-              >
-                {schedulePost.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Scheduling Posts...
-                  </>
-                ) : (
-                  <>
-                    <Calendar className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
-                    Schedule Posts ({selectedPlatforms.length})
-                    <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                  </>
-                )}
+              <Button variant="web3" size="lg" className="w-full group">
+                <Calendar className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
+                Schedule Posts
+                <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Button>
             </motion.div>
           </div>

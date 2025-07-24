@@ -16,7 +16,7 @@ import AIOutput "./ai_output";
 import Schedule "./schedule";
 import Dispatch "./dispatch";
 import Analytics "./analytics";
-// import AIService "./ai_service"; // Temporarily commented out due to syntax error
+import AIService "./ai_service";
 import Config "./config";
 
 actor class ViragentBackend() = this {
@@ -60,7 +60,7 @@ actor class ViragentBackend() = this {
     context : Blob;
   };
 
-  // Management canister interface for HTTP outcalls
+  // Management canister interface for HTTP outcalls with cycles
   type ManagementCanister = actor {
     http_request : HttpRequestArgs -> async HttpResponsePayload;
   };
@@ -68,7 +68,12 @@ actor class ViragentBackend() = this {
   // Management canister for HTTP outcalls
   let ic : ManagementCanister = actor ("aaaaa-aa");
 
-    // System initialization
+  // Cycles-aware HTTP request wrapper using modern syntax
+  public shared func httpRequestWithCycles(request: HttpRequestArgs): async HttpResponsePayload {
+    await (with cycles = 100_000_000) ic.http_request(request)
+  };
+
+  // System initialization
   private stable var initialized = false;
   
   // Mock AI Provider type
@@ -184,88 +189,7 @@ actor class ViragentBackend() = this {
     }
   };
 
-  // OpenAI API integration
-  private func generateWithOpenAI(prompt: Text, tone: Text, platform: Text): async Result.Result<{caption: Text; hashtags: [Text]; score: Float}, Text> {
-    if (openaiApiKey == "") {
-      return #err("OpenAI API key not configured");
-    };
-
-    let systemPrompt = "You are a social media content creator. Create engaging content for " # platform # " with a " # tone # " tone. Return only the caption text without quotes.";
-    let userPrompt = "Create a social media post: " # prompt;
-
-    let requestBody = "{
-      \"model\": \"gpt-3.5-turbo\",
-      \"messages\": [
-        {\"role\": \"system\", \"content\": \"" # systemPrompt # "\"},
-        {\"role\": \"user\", \"content\": \"" # userPrompt # "\"}
-      ],
-      \"max_tokens\": 200,
-      \"temperature\": 0.7
-    }";
-
-    let httpRequest: HttpRequestArgs = {
-      url = "https://api.openai.com/v1/chat/completions";
-      max_response_bytes = ?2048;
-      headers = [
-        { name = "Authorization"; value = "Bearer " # openaiApiKey },
-        { name = "Content-Type"; value = "application/json" }
-      ];
-      body = ?Blob.toArray(Text.encodeUtf8(requestBody));
-      method = #post;
-      transform = null;
-    };
-
-    try {
-      let response = await ic.http_request(httpRequest);
-      
-      if (response.status == 200) {
-        // Parse the response (simplified - in production you'd use a proper JSON parser)
-        let responseText = switch (Text.decodeUtf8(Blob.fromArray(response.body))) {
-          case (?text) text;
-          case null { return #err("Failed to decode response"); };
-        };
-        
-        // Extract content from response (simplified parsing)
-        // In production, you'd use a proper JSON parser
-        let caption = extractContentFromOpenAIResponse(responseText);
-        
-        #ok({
-          caption = caption;
-          hashtags = generateHashtags(platform, tone);
-          score = 90.0;
-        })
-      } else {
-        #err("OpenAI API request failed with status: " # Nat.toText(response.status))
-      }
-    } catch (e) {
-      #err("OpenAI API request failed: " # Error.message(e))
-    }
-  };
-
-  // Helper function to extract content from OpenAI response
-  private func extractContentFromOpenAIResponse(response: Text): Text {
-    // Simplified content extraction - in production use proper JSON parsing
-    // This is a basic implementation that looks for content in the response
-    if (Text.contains(response, #text "\"content\"")) {
-      // For now, return a generic message since proper JSON parsing is complex
-      "AI generated content for your social media post"
-    } else {
-      "Generated content for your post"
-    }
-  };
-
-  // Helper function to generate hashtags based on platform and tone
-  private func generateHashtags(platform: Text, tone: Text): [Text] {
-    switch (platform, tone) {
-      case ("instagram", "casual") { ["#vibes", "#content", "#social"] };
-      case ("instagram", "professional") { ["#business", "#professional", "#growth"] };
-      case ("twitter", "casual") { ["#tweet", "#social", "#content"] };
-      case ("twitter", "professional") { ["#business", "#twitter", "#professional"] };
-      case (_, _) { ["#AI", "#generated", "#content"] };
-    }
-  };
-
-  // AI Content Generation (using LLM library directly)
+  // AI Content Generation (using AI Service)
   public shared(msg) func generateAIContent(
     mediaId: Text,
     prompt: Text,
@@ -283,7 +207,7 @@ actor class ViragentBackend() = this {
           return #err("Unauthorized: Cannot generate content for media owned by another user");
         };
         
-        let _request: AIRequest = {
+        let request: AIService.AIRequest = {
           prompt = prompt;
           tone = tone;
           platform = platform;
@@ -293,21 +217,17 @@ actor class ViragentBackend() = this {
         // Choose AI provider based on configuration
         let result = switch (defaultAIProvider) {
           case (#OpenAI) {
-            await generateWithOpenAI(prompt, tone, platform)
+            if (openaiApiKey == "") {
+              #err("OpenAI API key not configured. Please set your OpenAI API key.")
+            } else {
+              await AIService.generateContent(#OpenAI, openaiApiKey, request, httpRequestWithCycles)
+            }
           };
           case (#GitHub) {
-            // Get GitHub token for FREE AI
-            let apiKey = githubToken;
-            
-            if (apiKey == "") {
+            if (githubToken == "") {
               #err("GitHub token not configured. Please set your GitHub token for FREE AI access.")
             } else {
-              // Mock GitHub generation for now - you can implement real GitHub Models API here
-              #ok({
-                caption = "Generated content with GitHub Models for " # platform # " with " # tone # " tone: " # prompt;
-                hashtags = generateHashtags(platform, tone);
-                score = 85.0;
-              })
+              await AIService.generateContent(#GitHub, githubToken, request, httpRequestWithCycles)
             }
           };
           case (#Claude) {
@@ -663,7 +583,7 @@ actor class ViragentBackend() = this {
       method = #post;
       transform = null;
     };
-    let response = await ic.http_request(httpRequest);
+    let response = await httpRequestWithCycles(httpRequest);
     if (response.status == 201 or response.status == 200) {
       "Tweet posted successfully"
     } else {
@@ -684,7 +604,7 @@ actor class ViragentBackend() = this {
       method = #post;
       transform = null;
     };
-    let response = await ic.http_request(httpRequest);
+    let response = await httpRequestWithCycles(httpRequest);
     if (response.status == 201 or response.status == 200) {
       "Twitter post scheduled and posted successfully"
     } else {

@@ -17,7 +17,10 @@ import {
   EngagementData, 
   SystemStats, 
   HealthStatus,
-  ApiResult 
+  ApiResult,
+  UserProfile,
+  AIProvider,
+  PlatformRecommendations
 } from '../types/backend';
 
 class ViragentBackendService {
@@ -36,14 +39,14 @@ class ViragentBackendService {
     });
 
     // Fetch root key for local development
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.MODE === 'development') {
       await this.agent.fetchRootKey();
     }
 
     // Get the canister ID from environment or dfx
-    const canisterId = process.env.VITE_VIRAGENT_BACKEND_CANISTER_ID || 
-                      process.env.CANISTER_ID_VIRAGENT_BACKEND ||
-                      'rrkah-fqaaa-aaaaa-aaaaq-cai'; // default local canister ID
+    const canisterId = import.meta.env.VITE_VIRAGENT_BACKEND_CANISTER_ID || 
+                      import.meta.env.VITE_CANISTER_ID_VIRAGENT_BACKEND ||
+                      'uxrrr-q7777-77774-qaaaq-cai'; // current deployed backend canister ID
 
     this.actor = Actor.createActor<BackendService>(idlFactory, {
       agent: this.agent,
@@ -157,12 +160,17 @@ class ViragentBackendService {
   // Auto-register user with Internet Identity (no email required)
   async autoRegister(): Promise<ApiResult<string>> {
     try {
-      const actor = this.getActor();
+      // Check if already registered first
+      const isReg = await this.isRegistered();
+      if (isReg.success && isReg.data) {
+        return { success: true, data: "Already registered" };
+      }
+      
+      const actor = this.ensureActor();
       const result = await actor.register();
       return { success: true, data: result };
     } catch (error) {
-      console.error('Auto-registration failed:', error);
-      return { success: false, error: error instanceof Error ? error.message : 'Auto-registration failed' };
+      return { success: false, error: String(error) };
     }
   }
 
@@ -492,8 +500,65 @@ class ViragentBackendService {
   async initBackend(): Promise<ApiResult<string>> {
     try {
       const actor = this.ensureActor();
-      const result = await actor.init();
+      const result = await actor.initSimple();
       return { success: true, data: result };
+    } catch (error) {
+      return { success: false, error: String(error) };
+    }
+  }
+
+  // Missing methods to sync with backend
+  async getPlatformRecommendations(platform: string): Promise<ApiResult<PlatformRecommendations>> {
+    try {
+      const actor = this.ensureActor();
+      const result = await actor.getPlatformRecommendations(platform);
+      const data: PlatformRecommendations = {
+        maxCaptionLength: this.bigIntToNumber(result.maxCaptionLength),
+        optimalHashtagCount: this.bigIntToNumber(result.optimalHashtagCount),
+        bestTones: result.bestTones,
+        features: result.features,
+      };
+      return { success: true, data };
+    } catch (error) {
+      return { success: false, error: String(error) };
+    }
+  }
+
+  async testTwitterPost(content: string, accessToken: string): Promise<ApiResult<string>> {
+    try {
+      const actor = this.ensureActor();
+      const result = await actor.testTwitterPost(content, accessToken);
+      return { success: true, data: result };
+    } catch (error) {
+      return { success: false, error: String(error) };
+    }
+  }
+
+  async scheduleTwitterPost(content: string, scheduledAt: number, accessToken: string): Promise<ApiResult<string>> {
+    try {
+      const actor = this.ensureActor();
+      const result = await actor.scheduleTwitterPost(content, BigInt(scheduledAt), accessToken);
+      return { success: true, data: result };
+    } catch (error) {
+      return { success: false, error: String(error) };
+    }
+  }
+
+  async initWithOpenAI(): Promise<ApiResult<string>> {
+    try {
+      const actor = this.ensureActor();
+      const result = await actor.initWithOpenAI();
+      return { success: true, data: result };
+    } catch (error) {
+      return { success: false, error: String(error) };
+    }
+  }
+
+  async tick(): Promise<ApiResult<void>> {
+    try {
+      const actor = this.ensureActor();
+      await actor.tick();
+      return { success: true, data: undefined };
     } catch (error) {
       return { success: false, error: String(error) };
     }

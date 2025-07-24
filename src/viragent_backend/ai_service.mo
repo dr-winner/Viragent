@@ -5,9 +5,8 @@ import Float "mo:base/Float";
 import Blob "mo:base/Blob";
 import Array "mo:base/Array";
 import Iter "mo:base/Iter";
-import Char "mo:base/Char";
-import Int32 "mo:base/Int32";
 import Nat "mo:base/Nat";
+import Error "mo:base/Error";
 
 module AIService {
 
@@ -49,7 +48,8 @@ module AIService {
   };
 
   public type AIProvider = {
-    #GitHub;  // Only GitHub Models - Free AI for everyone!
+    #OpenAI;  // OpenAI GPT API
+    #GitHub;  // GitHub Models - Free AI for everyone!
   };
 
   public type AIRequest = {
@@ -73,12 +73,76 @@ module AIService {
   ): async Result.Result<AIResponse, Text> {
     Debug.print("Generating AI content for: " # request.platform # " with tone: " # request.tone);
     if (apiKey == "") {
-      return #err("No GitHub token provided");
+      return #err("No API key provided");
     };
     switch (provider) {
+      case (#OpenAI) {
+        await generateWithOpenAI(apiKey, request, httpOutcall)
+      };
       case (#GitHub) {
         await generateWithGitHub(apiKey, request, httpOutcall)
       };
+    }
+  };
+
+  // OpenAI API Integration
+  private func generateWithOpenAI(
+    apiKey: Text,
+    request: AIRequest,
+    httpOutcall: shared (HttpRequestArgs) -> async HttpResponsePayload
+  ): async Result.Result<AIResponse, Text> {
+    let prompt = buildPrompt(request);
+    let systemPrompt = "You are a social media content expert. Create engaging, viral-worthy content. Return only the caption text without hashtags.";
+    
+    let requestBody = "{" #
+      "\"model\": \"gpt-3.5-turbo\"," #
+      "\"messages\": [{" #
+        "\"role\": \"system\"," #
+        "\"content\": \"" # escapeJsonString(systemPrompt) # "\"" #
+      "},{" #
+        "\"role\": \"user\"," #
+        "\"content\": \"" # escapeJsonString(prompt) # "\"" #
+      "}]," #
+      "\"temperature\": 0.7," #
+      "\"max_tokens\": 200" #
+    "}";
+    
+    let bodyBytes = Text.encodeUtf8(requestBody);
+    
+    let httpRequest: HttpRequestArgs = {
+      url = "https://api.openai.com/v1/chat/completions";
+      max_response_bytes = ?4096;
+      headers = [
+        { name = "Content-Type"; value = "application/json" },
+        { name = "Authorization"; value = "Bearer " # apiKey }
+      ];
+      body = ?Blob.toArray(bodyBytes);
+      method = #post;
+      transform = null;
+    };
+    
+    try {
+      Debug.print("Making OpenAI API request...");
+      let response = await httpOutcall<system>(httpRequest);
+      Debug.print("Response status: " # Nat.toText(response.status));
+      if (response.status == 200) {
+        let responseText = switch (Text.decodeUtf8(Blob.fromArray(response.body))) {
+          case null { "" };
+          case (?text) { text };
+        };
+        Debug.print("OpenAI API response: " # responseText);
+        
+        // Parse OpenAI response
+        await parseOpenAIResponse(responseText, request)
+      } else {
+        let responseText = switch (Text.decodeUtf8(Blob.fromArray(response.body))) {
+          case null { "" };
+          case (?text) { text };
+        };
+        #err("OpenAI API request failed with status: " # Nat.toText(response.status) # ", response: " # responseText)
+      }
+    } catch (error) {
+      #err("HTTP request to OpenAI failed: " # Error.message(error))
     }
   };
 
@@ -118,7 +182,7 @@ module AIService {
     
     try {
       Debug.print("Making GitHub Models API request...");
-      let response = await httpOutcall(httpRequest);
+      let response = await httpOutcall<system>(httpRequest);
       Debug.print("Response status: " # Nat.toText(response.status));
       if (response.status == 200) {
         let responseText = switch (Text.decodeUtf8(Blob.fromArray(response.body))) {
@@ -137,7 +201,29 @@ module AIService {
         #err("GitHub Models API request failed with status: " # Nat.toText(response.status) # ", response: " # responseText)
       }
     } catch (error) {
-      #err("HTTP request to GitHub Models failed: " # debug_show(error))
+      #err("HTTP request to GitHub Models failed: " # Error.message(error))
+    }
+  };
+
+  private func parseOpenAIResponse(responseText: Text, request: AIRequest): async Result.Result<AIResponse, Text> {
+    // OpenAI response format parsing
+    if (Text.contains(responseText, #text "choices")) {
+      // Extract content from choices array
+      let content = extractContentFromChoices(responseText);
+      if (content != "") {
+        let cleanContent = Text.trim(content, #char ' ');
+        let hashtags = generateDefaultHashtags(request.platform, request.tone);
+        
+        #ok({ 
+          caption = cleanContent; 
+          hashtags = hashtags; 
+          score = 92.0; // OpenAI provides high-quality content
+        })
+      } else {
+        #err("OpenAI API response missing content")
+      }
+    } else {
+      #err("OpenAI API response format invalid: " # responseText)
     }
   };
 
@@ -223,18 +309,12 @@ module AIService {
   };
 
   private func escapeJsonString(text: Text): Text {
-    let chars = Text.toIter(text);
-    var result = "";
-    for (char in chars) {
-      switch (char) {
-        case ('"') { result := result # "\\\"" };
-        case ('\\') { result := result # "\\\\" };
-        case ('\n') { result := result # "\\n" };
-        case ('\r') { result := result # "\\r" };
-        case ('\t') { result := result # "\\t" };
-        case (_) { result := result # Char.toText(char) };
-      }
-    };
+    // Simple implementation: replace problematic characters
+    var result = Text.replace(text, #text "\"", "\\\"");
+    result := Text.replace(result, #text "\\", "\\\\");
+    result := Text.replace(result, #text "\n", "\\n");
+    result := Text.replace(result, #text "\r", "\\r");
+    result := Text.replace(result, #text "\t", "\\t");
     result
   };
 

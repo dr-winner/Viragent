@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,16 +28,24 @@ import {
   Edit,
   Trash2,
   Copy,
-  TrendingUp
+  TrendingUp,
+  Loader2
 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import { HttpAgent, Actor } from "@dfinity/agent";
-import { idlFactory as backendIdl, canisterId as backendCanisterId } from "../../../declarations/viragent_backend";
+import { useSchedulePost, useScheduledPosts, useCancelPost, useBackendInit } from "@/hooks/useBackend";
+import { ScheduledPost } from "@/types/backend";
 
 const Schedule = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(['twitter', 'instagram']);
   const [selectedTime, setSelectedTime] = useState('14:00');
+  const { toast } = useToast();
+  
+  // Use React Query hooks for backend operations
+  const schedulePostMutation = useSchedulePost();
+  const scheduledPostsQuery = useScheduledPosts();
+  const cancelPostMutation = useCancelPost();
+  const backendInit = useBackendInit();
 
   const platforms = [
     { id: 'twitter', name: 'Twitter', icon: Twitter, color: '#1DA1F2', followers: '12.5K' },
@@ -46,7 +54,8 @@ const Schedule = () => {
     { id: 'tiktok', name: 'TikTok', icon: Play, color: '#FF0050', followers: '15.1K' }
   ];
 
-  const scheduledPosts = [
+  // Demo data - in real app this would come from scheduledPostsQuery.data
+  const demoScheduledPosts = [
     {
       id: 1,
       content: "🚀 Exciting announcement coming tomorrow! Stay tuned for something revolutionary in the AI space. #AI #Innovation",
@@ -115,48 +124,55 @@ const Schedule = () => {
 
   const togglePlatform = (platformId: string) => {
     setSelectedPlatforms(prev => 
-      prev.includes(platformId)
+      prev.includes(platformId) 
         ? prev.filter(id => id !== platformId)
         : [...prev, platformId]
     );
   };
 
-  const { toast } = useToast();
-
   const handleSchedulePost = async () => {
     try {
       if (!selectedDate || selectedPlatforms.length === 0) {
-        toast({ title: "Missing info", description: "Select date, time, and at least one platform.", variant: "destructive" });
+        toast({ 
+          title: "Missing info", 
+          description: "Select date, time, and at least one platform.", 
+          variant: "destructive" 
+        });
         return;
       }
-      const accessToken = localStorage.getItem("twitter_access_token");
-      if (selectedPlatforms.includes("twitter") && !accessToken) {
-        toast({ title: "Not connected", description: "Connect to Twitter to schedule Twitter posts.", variant: "destructive" });
-        return;
+      
+      const scheduledAt = new Date(selectedDate);
+      scheduledAt.setHours(Number(selectedTime.split(":")[0]), Number(selectedTime.split(":")[1]));
+      
+      // Schedule posts for each selected platform
+      for (const platform of selectedPlatforms) {
+        const postData: ScheduledPost = {
+          id: `${Date.now()}_${platform}`,
+          mediaId: 'demo-media-id', // In real app, this would come from actual media
+          platform,
+          scheduledAt: scheduledAt.getTime(),
+          status: 'scheduled'
+        };
+        
+        await schedulePostMutation.mutateAsync(postData);
       }
-      const agent = new HttpAgent({ host: "http://localhost:4943" });
-      const backend = Actor.createActor(backendIdl, {
-        agent,
-        canisterId: backendCanisterId,
+      
+      toast({ 
+        title: "Success", 
+        description: `Scheduled ${selectedPlatforms.length} post(s) for ${scheduledAt.toLocaleDateString()}` 
       });
-      // For demo: just schedule for Twitter (extend for other platforms as needed)
-      if (selectedPlatforms.includes("twitter")) {
-        const content = "Your scheduled tweet content here"; // Replace with actual content input
-        const scheduledAt = new Date(selectedDate);
-        scheduledAt.setHours(Number(selectedTime.split(":")[0]), Number(selectedTime.split(":")[1]));
-        const res = await backend.scheduleTwitterPost(content, scheduledAt.getTime(), accessToken);
-        if (res && res.toLowerCase().includes("success")) {
-          toast({ title: "Success", description: "Twitter post scheduled!" });
-        } else {
-          toast({ title: "Error", description: res, variant: "destructive" });
-        }
-      }
+      
+      // Refresh scheduled posts
+      scheduledPostsQuery.refetch();
+      
     } catch (err) {
-      toast({ title: "Error", description: String(err), variant: "destructive" });
+      toast({ 
+        title: "Error", 
+        description: "Failed to schedule posts. Please try again.", 
+        variant: "destructive" 
+      });
     }
-  };
-
-  return (
+  };  return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
@@ -272,21 +288,41 @@ const Schedule = () => {
               </Card>
             </motion.div>
 
-            {/* Schedule Button */}
+            {/* Action Buttons */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
+              className="space-y-3"
             >
               <Button 
                 variant="web3" 
                 size="lg" 
                 className="w-full group"
-                disabled={selectedPlatforms.length === 0 || !selectedDate}
+                disabled={selectedPlatforms.length === 0 || !selectedDate || schedulePostMutation.isPending}
                 onClick={handleSchedulePost}
               >
-                <CalendarIcon className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
-                Schedule Post
+                {schedulePostMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Scheduling...
+                  </>
+                ) : (
+                  <>
+                    <CalendarIcon className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
+                    Schedule Post
+                  </>
+                )}
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="w-full group"
+                onClick={() => window.location.href = '/upload'}
+              >
+                <Share2 className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
+                Create New Post
               </Button>
             </motion.div>
           </div>
@@ -314,7 +350,7 @@ const Schedule = () => {
                 </div>
 
                 <div className="space-y-4">
-                  {scheduledPosts.map((post, index) => (
+                  {demoScheduledPosts.map((post, index) => (
                     <motion.div
                       key={post.id}
                       className="glass-card p-6 hover:bg-card/90 transition-all duration-200"

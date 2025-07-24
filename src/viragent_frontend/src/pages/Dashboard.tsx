@@ -32,8 +32,9 @@ import {
 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { HttpAgent, Actor } from "@dfinity/agent";
-import { idlFactory as backendIdl, canisterId as backendCanisterId } from "../../../declarations/viragent_backend";
+import { backendService } from "@/services/backend";
+import { useAuth } from "@/contexts/AuthContext";
+import { ApiResult } from "@/types/backend";
 
 const Dashboard = () => {
   const [timeRange, setTimeRange] = useState('7d');
@@ -41,10 +42,15 @@ const Dashboard = () => {
   const [tweetContent, setTweetContent] = useState("");
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { identity } = useAuth();
 
   useEffect(() => {
     setTwitterConnected(!!localStorage.getItem("twitter_access_token"));
-  }, []);
+    // Initialize backend service with identity
+    if (identity) {
+      backendService.init(identity);
+    }
+  }, [identity]);
 
   const handleConnectTwitter = () => {
     navigate("/auth/twitter");
@@ -57,17 +63,14 @@ const Dashboard = () => {
         toast({ title: "Not connected", description: "Please connect to Twitter first.", variant: "destructive" });
         return;
       }
-      const agent = new HttpAgent({ host: "http://localhost:4943" });
-      const backend = Actor.createActor(backendIdl, {
-        agent,
-        canisterId: backendCanisterId,
-      });
-      const res = await backend.testTwitterPost(tweetContent, accessToken);
-      if (res && res.toLowerCase().includes("success")) {
+      
+      const result = await backendService.testTwitterPost(tweetContent, accessToken);
+      if (result.success && result.data?.toLowerCase().includes("success")) {
         toast({ title: "Success", description: "Tweet posted successfully!" });
         setTweetContent("");
       } else {
-        toast({ title: "Error", description: res, variant: "destructive" });
+        const errorMessage = result.success ? result.data : (result as any).error;
+        toast({ title: "Error", description: errorMessage, variant: "destructive" });
       }
     } catch (err) {
       toast({ title: "Error", description: String(err), variant: "destructive" });

@@ -167,7 +167,69 @@ export const useAllTones = () => {
   });
 };
 
-// AI Output Hooks
+// AI Content Generation Hooks
+export const useGenerateAIContent = () => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ mediaId, prompt, tone, platform }: { 
+      mediaId: string; 
+      prompt: string; 
+      tone: string; 
+      platform: string 
+    }) => backendService.generateAIContent(mediaId, prompt, tone, platform),
+    onSuccess: (result, variables) => {
+      if (result.success) {
+        toast({
+          title: "AI Content Generated",
+          description: "AI has generated content for your media.",
+        });
+        queryClient.invalidateQueries({ queryKey: ['ai-output', variables.mediaId] });
+        queryClient.invalidateQueries({ queryKey: ['user-media'] });
+      } else {
+        toast({
+          title: "Generation Failed",
+          description: result.error,
+          variant: "destructive"
+        });
+      }
+    },
+    onError: (error) => {
+      toast({
+        title: "Generation Failed",
+        description: "Failed to generate AI content. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
+};
+
+export const useGenerateSmartContent = () => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ mediaId, prompt }: { mediaId: string; prompt: string }) => 
+      backendService.generateSmartContent(mediaId, prompt),
+    onSuccess: (result, variables) => {
+      if (result.success) {
+        toast({
+          title: "Smart Content Generated",
+          description: "AI has generated optimized content for your media.",
+        });
+        queryClient.invalidateQueries({ queryKey: ['ai-output', variables.mediaId] });
+      } else {
+        toast({
+          title: "Generation Failed",
+          description: result.error,
+          variant: "destructive"
+        });
+      }
+    }
+  });
+};
+
 export const useGenerateOutput = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -305,4 +367,14 @@ export const useHealthCheck = () => {
     refetchInterval: 30 * 1000, // Check every 30 seconds
     staleTime: 0, // Always fresh
   });
+};
+
+// Simple hook to get the backend service instance
+export const useBackend = () => {
+  const { identity } = useAuth();
+  
+  return {
+    service: backendService,
+    isReady: !!identity
+  };
 };

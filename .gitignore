@@ -4,12 +4,22 @@
 **/declarations/
 canister_ids.json
 
-# Environment variables
+# Environment variables and secrets
 .env
 .env.local
 .env.development
 .env.test
 .env.production
+*.env
+.env.*
+
+# API Keys and sensitive data
+.secrets
+.keys
+**/secrets/
+**/keys/
+api_keys.txt
+config.local.*
 
 # Node.js and npm
 node_modules/

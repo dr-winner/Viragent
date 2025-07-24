@@ -66,7 +66,19 @@ Viragent is built using a modern, decentralized architecture:
    cd viragent
    ```
 
-2. **Install dependencies**
+2. **Set up environment variables**
+   ```bash
+   # Copy the environment template
+   cp .env.example .env
+   
+   # Edit .env and add your API keys:
+   # - OpenAI API key for AI features
+   # - GitHub token for free AI (alternative)
+   # - Twitter credentials for social integration
+   nano .env
+   ```
+
+3. **Install dependencies**
    ```bash
    npm install
    cd src/viragent_frontend
@@ -74,21 +86,51 @@ Viragent is built using a modern, decentralized architecture:
    cd ../..
    ```
 
-3. **Start the local Internet Computer replica**
+4. **Start the local Internet Computer replica**
    ```bash
    dfx start --background
    ```
 
-4. **Deploy the canisters**
+5. **Deploy the canisters**
    ```bash
    dfx deploy
    ```
 
-5. **Access the application**
+6. **Initialize with your API keys**
+   ```bash
+   # Run the initialization script
+   chmod +x init-env.sh
+   ./init-env.sh
+   ```
+
+7. **Access the application**
    
    Your application will be available at the URLs shown after deployment, typically:
    - Frontend: `http://{canister-id}.localhost:4943/`
    - Backend Candid UI: `http://127.0.0.1:4943/?canisterId={candid-ui-id}&id={backend-id}`
+
+## 🔐 Environment Setup
+
+### Required Environment Variables
+
+Create a `.env` file based on `.env.example` and configure:
+
+```bash
+# AI Provider (Choose one or both)
+OPENAI_API_KEY=sk-proj-your-openai-key-here     # Paid OpenAI API
+GITHUB_TOKEN=ghp_your-github-token-here         # Free GitHub Models
+
+# Twitter Integration (Optional)
+VITE_TWITTER_CLIENT_ID=your-twitter-client-id
+VITE_TWITTER_CLIENT_SECRET=your-twitter-client-secret
+VITE_TWITTER_REDIRECT_URI=http://localhost:4943/twitter/callback
+```
+
+### Getting API Keys
+
+1. **OpenAI API Key**: Visit [OpenAI Platform](https://platform.openai.com/api-keys)
+2. **GitHub Token**: Visit [GitHub Settings](https://github.com/settings/tokens) (no special permissions needed)
+3. **Twitter Credentials**: Visit [Twitter Developer Portal](https://developer.twitter.com/en/portal/dashboard)
 
 ## 🛠️ Development
 
