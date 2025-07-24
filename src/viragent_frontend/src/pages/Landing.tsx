@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -13,9 +13,16 @@ import {
   Shield,
   Rocket,
   ArrowRight,
-  Play
+  Play,
+  Globe,
+  Zap as Lightning,
+  Twitter,
+  Facebook,
+  Music,
+  MessageCircle
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { VideoPlayer } from '@/components/VideoPlayer';
 import heroImage from '@/assets/hero-bg.jpg';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -25,6 +32,7 @@ const Landing = () => {
   const featuresRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const [showVideoDemo, setShowVideoDemo] = useState(false);
 
   const handleGetStarted = () => {
     if (isAuthenticated) {
@@ -32,6 +40,10 @@ const Landing = () => {
     } else {
       navigate('/auth');
     }
+  };
+
+  const handleWatchDemo = () => {
+    setShowVideoDemo(true);
   };
 
   useEffect(() => {
@@ -99,12 +111,12 @@ const Landing = () => {
   ];
 
   const partners = [
-    { name: 'Internet Computer', logo: '◇' },
-    { name: 'GitHub Models', logo: '⚡' },
-    { name: 'Twitter API', logo: '🐦' },
-    { name: 'Meta', logo: '📘' },
-    { name: 'TikTok', logo: '🎵' },
-    { name: 'Discord', logo: '💬' }
+    { name: 'Internet Computer', icon: Globe, color: 'text-blue-400' },
+    { name: 'GitHub Models', icon: Lightning, color: 'text-purple-400' },
+    { name: 'Twitter API', icon: Twitter, color: 'text-blue-500' },
+    { name: 'Meta', icon: Facebook, color: 'text-blue-600' },
+    { name: 'TikTok', icon: Music, color: 'text-pink-500' },
+    { name: 'Discord', icon: MessageCircle, color: 'text-indigo-400' }
   ];
 
   return (
@@ -170,6 +182,18 @@ const Landing = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, ease: "easeOut" }}
           >
+            <motion.div 
+              className="mb-8 flex justify-center"
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+            >
+              <img 
+                src="/viragent-logo.svg" 
+                alt="Viragent Logo" 
+                className="w-24 h-24 md:w-32 md:h-32"
+              />
+            </motion.div>
             <h1 className="text-6xl md:text-8xl font-space-grotesk font-bold mb-6">
               <span className="gradient-text">Viragent</span>
             </h1>
@@ -198,7 +222,7 @@ const Landing = () => {
               {isAuthenticated ? 'Go to Dashboard' : 'Launch App'}
               <Rocket className="ml-2 group-hover:translate-x-1 transition-transform" />
             </Button>
-            <Button variant="glass" size="xl" className="group">
+            <Button variant="glass" size="xl" className="group" onClick={handleWatchDemo}>
               <Play className="mr-2 group-hover:scale-110 transition-transform" />
               Watch Demo
             </Button>
@@ -289,7 +313,7 @@ const Landing = () => {
                   whileHover={{ scale: 1.05 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <span className="text-2xl">{partner.logo}</span>
+                  <partner.icon className={`w-6 h-6 ${partner.color}`} />
                   <span className="font-medium">{partner.name}</span>
                 </motion.div>
               ))}
@@ -328,7 +352,14 @@ const Landing = () => {
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="col-span-1 md:col-span-2">
-              <h3 className="text-2xl font-space-grotesk font-bold gradient-text mb-4">Viragent</h3>
+              <div className="flex items-center space-x-3 mb-4">
+                <img 
+                  src="/viragent-logo.svg" 
+                  alt="Viragent Logo" 
+                  className="w-8 h-8"
+                />
+                <h3 className="text-2xl font-space-grotesk font-bold gradient-text">Viragent</h3>
+              </div>
               <p className="text-muted-foreground max-w-md">
                 The future of social media automation, powered by AI and secured by Web3 technology.
               </p>
@@ -353,10 +384,48 @@ const Landing = () => {
             </div>
           </div>
           <div className="border-t border-border/30 mt-12 pt-8 text-center text-muted-foreground">
-            <p>&copy; 2024 Viragent. Built on Internet Computer. All rights reserved.</p>
+            <p>&copy;  Viragent. Built on Internet Computer. All rights reserved.</p>
           </div>
         </div>
       </footer>
+
+      {/* Video Demo Modal */}
+      {showVideoDemo && (
+        <motion.div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={() => setShowVideoDemo(false)}
+        >
+          <motion.div
+            className="relative w-full max-w-4xl mx-4 aspect-video"
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.8, opacity: 0 }}
+            transition={{ type: "spring", damping: 20, stiffness: 300 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <VideoPlayer
+              src="/viragenVid.mp4"
+              autoplay={true}
+              muted={false}
+              loop={false}
+              className="w-full h-full"
+            />
+            
+            {/* Close Button */}
+            <button
+              onClick={() => setShowVideoDemo(false)}
+              className="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors"
+            >
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </motion.div>
+        </motion.div>
+      )}
     </div>
   );
 };

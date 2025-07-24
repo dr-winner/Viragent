@@ -18,6 +18,8 @@ import Dispatch "./dispatch";
 import Analytics "./analytics";
 import AIService "./ai_service";
 import Config "./config";
+import VetKeys "./vetkeys";
+import SecureConfig "./secure_config";
 
 actor class ViragentBackend() = this {
 
@@ -97,6 +99,12 @@ actor class ViragentBackend() = this {
   private var aiOutputStore = AIOutput.createStore();
   private var scheduleStore = Schedule.createStore();
   private var analyticsStore = Analytics.createStore();
+  
+  // VetKeys cryptographic manager for privacy features
+  private var vetKeysManager = VetKeys.VetKeysManager();
+  
+  // Secure configuration manager for encrypted API keys
+  private var secureConfigManager = SecureConfig.SecureConfigManager();
 
   // Initialize the system with AI provider keys
   public func init(github_token: ?Text, openai_key: ?Text): async Text {
@@ -610,5 +618,249 @@ actor class ViragentBackend() = this {
     } else {
       "Failed to post scheduled tweet: " # Nat.toText(response.status)
     }
-  }
+  };
+
+  // =============================================
+  // VetKeys Cryptographic Privacy Endpoints
+  // =============================================
+
+  /**
+   * Get VetKD public key for encryption
+   */
+  public shared func getVetKeyPublicKey(derivation_path: [Blob]): async Result.Result<Blob, Text> {
+    await vetKeysManager.get_public_key(derivation_path)
+  };
+
+  /**
+   * Get encrypted VetKey for decryption
+   */
+  public shared func getVetKeyEncryptedKey(
+    derivation_path: [Blob], 
+    encryption_public_key: Blob
+  ): async Result.Result<Blob, Text> {
+    await vetKeysManager.get_encrypted_key(derivation_path, encryption_public_key)
+  };
+
+  /**
+   * Store encrypted content with identity-based encryption
+   */
+  public shared({caller}) func storeEncryptedContent(
+    encrypted_data: Blob,
+    identity_bytes: Blob,
+    seed_bytes: Blob,
+    content_type: Text,
+    metadata: ?Text
+  ): async Text {
+    vetKeysManager.store_encrypted_content(
+      caller, encrypted_data, identity_bytes, seed_bytes, content_type, metadata
+    )
+  };
+
+  /**
+   * Get user's encrypted content
+   */
+  public shared({caller}) func getUserEncryptedContent(
+    content_type: ?Text
+  ): async [VetKeys.EncryptedContent] {
+    vetKeysManager.get_user_content(caller, content_type)
+  };
+
+  /**
+   * Store time-locked content
+   */
+  public shared({caller}) func storeTimeLockedContent(
+    encrypted_data: Blob,
+    identity_bytes: Blob,
+    seed_bytes: Blob,
+    unlock_time: Int
+  ): async Text {
+    vetKeysManager.store_timelock_content(
+      caller, encrypted_data, identity_bytes, seed_bytes, unlock_time
+    )
+  };
+
+  /**
+   * Check if time-locked content can be unlocked
+   */
+  public shared func canUnlockTimeLockedContent(content_id: Text): async ?Bool {
+    vetKeysManager.can_unlock_content(content_id)
+  };
+
+  /**
+   * Get unlockable time-locked content for user
+   */
+  public shared({caller}) func getUnlockableContent(): async [VetKeys.TimeLockedContent] {
+    vetKeysManager.get_unlockable_content(caller)
+  };
+
+  /**
+   * Send secure message between users
+   */
+  public shared({caller}) func sendSecureMessage(
+    to_principal: Principal,
+    encrypted_data: Blob,
+    identity_bytes: Blob,
+    seed_bytes: Blob
+  ): async Text {
+    vetKeysManager.send_secure_message(
+      caller, to_principal, encrypted_data, identity_bytes, seed_bytes
+    )
+  };
+
+  /**
+   * Get user's secure messages (sent or received)
+   */
+  public shared({caller}) func getUserSecureMessages(as_sender: Bool): async [VetKeys.SecureMessage] {
+    vetKeysManager.get_user_messages(caller, as_sender)
+  };
+
+  /**
+   * Create premium content with access control
+   */
+  public shared({caller}) func createPremiumContent(
+    encrypted_data: Blob,
+    access_level: Text,
+    access_key: Blob,
+    price: ?Nat
+  ): async Text {
+    vetKeysManager.create_premium_content(
+      caller, encrypted_data, access_level, access_key, price
+    )
+  };
+
+  /**
+   * Subscribe to premium content
+   */
+  public shared({caller}) func subscribeToPremiumContent(content_id: Text): async Result.Result<Text, Text> {
+    vetKeysManager.subscribe_to_premium(caller, content_id)
+  };
+
+  /**
+   * Get premium content for subscribed users
+   */
+  public shared({caller}) func getPremiumContent(content_id: Text): async ?VetKeys.PremiumContent {
+    vetKeysManager.get_premium_content(caller, content_id)
+  };
+
+  /**
+   * Get system statistics (for admin purposes)
+   */
+  public shared func getVetKeysSystemStats(): async {
+    encrypted_contents_count: Nat;
+    timelock_contents_count: Nat;
+    secure_messages_count: Nat;
+    premium_contents_count: Nat;
+  } {
+    vetKeysManager.get_system_stats()
+  };
+
+  // =============================================
+  // Secure API Key Management (vetKeys Protected)
+  // =============================================
+
+  /**
+   * Store encrypted API key using vetKeys cryptography
+   */
+  public shared({caller}) func storeSecureApiKey(
+    encrypted_key: Blob,
+    identity_bytes: Blob,
+    seed_bytes: Blob,
+    provider: Text
+  ): async Text {
+    if (not User.isRegistered(userStore, caller)) {
+      return "User not registered";
+    };
+    
+    secureConfigManager.storeSecureApiKey(
+      caller, encrypted_key, identity_bytes, seed_bytes, provider
+    )
+  };
+
+  /**
+   * Get encrypted API key for user (only returns encrypted data)
+   */
+  public shared({caller}) func getSecureApiKey(provider: Text): async ?{
+    encrypted_key: Blob;
+    identity_bytes: Blob;
+    seed_bytes: Blob;
+    provider: Text;
+    created_at: Int;
+  } {
+    switch (secureConfigManager.getSecureApiKey(caller, provider)) {
+      case (?config) {
+        ?{
+          encrypted_key = config.encrypted_key;
+          identity_bytes = config.identity_bytes;
+          seed_bytes = config.seed_bytes;
+          provider = config.provider;
+          created_at = config.created_at;
+        }
+      };
+      case null null;
+    }
+  };
+
+  /**
+   * Check if user has a secure API key configured
+   */
+  public shared({caller}) func hasSecureApiKey(provider: Text): async Bool {
+    secureConfigManager.hasSecureApiKey(caller, provider)
+  };
+
+  /**
+   * Remove secure API key
+   */
+  public shared({caller}) func removeSecureApiKey(provider: Text): async Bool {
+    secureConfigManager.removeSecureApiKey(caller, provider)
+  };
+
+  /**
+   * Get user's configured providers
+   */
+  public shared({caller}) func getUserApiProviders(): async [Text] {
+    if (not User.isRegistered(userStore, caller)) {
+      return [];
+    };
+    secureConfigManager.getUserProviders(caller)
+  };
+
+  /**
+   * Enhanced AI configuration with secure key storage
+   */
+  public shared({caller}) func setSecureAIConfig(
+    provider: AIProvider,
+    encrypted_key: Blob,
+    identity_bytes: Blob,
+    seed_bytes: Blob
+  ): async Result.Result<Text, Text> {
+    if (not User.isRegistered(userStore, caller)) {
+      return #err("User not registered");
+    };
+    
+    let providerText = switch (provider) {
+      case (#GitHub) "github";
+      case (#OpenAI) "openai";
+      case (#Claude) "claude";
+    };
+    
+    let configId = secureConfigManager.storeSecureApiKey(
+      caller, encrypted_key, identity_bytes, seed_bytes, providerText
+    );
+    
+    // Set as default provider for this user
+    defaultAIProvider := provider;
+    
+    #ok("Secure API key stored successfully with ID: " # configId # " for " # providerText)
+  };
+
+  /**
+   * Get secure configuration statistics
+   */
+  public shared func getSecureConfigStats(): async {
+    total_configs: Nat;
+    unique_users: Nat;
+    providers: [Text];
+  } {
+    secureConfigManager.getSecureConfigStats()
+  };
 }

@@ -60,7 +60,7 @@ const Schedule = () => {
       id: 1,
       content: "🚀 Exciting announcement coming tomorrow! Stay tuned for something revolutionary in the AI space. #AI #Innovation",
       platforms: ['twitter', 'linkedin'],
-      scheduledTime: '2024-01-15T14:00:00',
+      scheduledTime: '2025-01-15T14:00:00',
       status: 'scheduled',
       viralScore: 8.2,
       estimatedReach: '12.5K'
@@ -69,7 +69,7 @@ const Schedule = () => {
       id: 2,
       content: "Behind the scenes: How we built our AI-powered social media automation platform ✨ Thread below 👇",
       platforms: ['twitter'],
-      scheduledTime: '2024-01-15T16:30:00',
+      scheduledTime: '2025-01-15T16:30:00',
       status: 'published',
       viralScore: 7.8,
       actualReach: '18.2K',
@@ -79,7 +79,7 @@ const Schedule = () => {
       id: 3,
       content: "New blog post: The Future of Social Media Automation 📝 Link in bio! #BlogPost #SocialMedia",
       platforms: ['instagram', 'linkedin'],
-      scheduledTime: '2024-01-15T18:00:00',
+      scheduledTime: '2025-01-15T18:00:00',
       status: 'failed',
       viralScore: 6.5,
       error: 'Authentication expired'

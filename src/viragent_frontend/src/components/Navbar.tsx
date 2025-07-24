@@ -11,7 +11,8 @@ import {
   Upload,
   Brain,
   Calendar,
-  BarChart3
+  BarChart3,
+  Key
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -25,6 +26,7 @@ export const Navbar = () => {
     { path: '/upload', label: 'Upload', icon: Upload },
     { path: '/ai-review', label: 'AI Review', icon: Brain },
     { path: '/schedule', label: 'Schedule', icon: Calendar },
+    { path: '/secure-api-keys', label: 'API Keys', icon: Key },
   ];
 
   const handleLogout = async () => {
@@ -51,8 +53,12 @@ export const Navbar = () => {
             onClick={() => navigate('/dashboard')}
             whileHover={{ scale: 1.05 }}
           >
-            <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">V</span>
+            <div className="w-8 h-8 flex items-center justify-center">
+              <img 
+                src="/viragent-logo.svg" 
+                alt="Viragent Logo" 
+                className="w-8 h-8"
+              />
             </div>
             <span className="font-space-grotesk font-bold text-xl gradient-text">
               Viragent

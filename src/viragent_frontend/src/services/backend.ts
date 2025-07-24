@@ -563,6 +563,218 @@ class ViragentBackendService {
       return { success: false, error: String(error) };
     }
   }
+
+  // VetKeys Integration Functions
+  async storeEncryptedContent(
+    encrypted_data: Uint8Array,
+    identity_bytes: Uint8Array,
+    seed_bytes: Uint8Array,
+    content_type: string,
+    metadata?: string
+  ): Promise<ApiResult<string>> {
+    try {
+      const actor = this.ensureActor();
+      const result = await actor.storeEncryptedContent(
+        encrypted_data,
+        identity_bytes,
+        seed_bytes,
+        content_type,
+        metadata ? [metadata] : []
+      );
+      return { success: true, data: result };
+    } catch (error) {
+      return { success: false, error: String(error) };
+    }
+  }
+
+  async sendSecureMessage(
+    to_principal: Principal,
+    encrypted_data: Uint8Array,
+    identity_bytes: Uint8Array,
+    seed_bytes: Uint8Array
+  ): Promise<ApiResult<string>> {
+    try {
+      const actor = this.ensureActor();
+      const result = await actor.sendSecureMessage(
+        to_principal,
+        encrypted_data,
+        identity_bytes,
+        seed_bytes
+      );
+      return { success: true, data: result };
+    } catch (error) {
+      return { success: false, error: String(error) };
+    }
+  }
+
+  async createPremiumContent(
+    encrypted_data: Uint8Array,
+    access_level: string,
+    access_key: Uint8Array,
+    price?: number
+  ): Promise<ApiResult<string>> {
+    try {
+      const actor = this.ensureActor();
+      const result = await actor.createPremiumContent(
+        encrypted_data,
+        access_level,
+        access_key,
+        price ? [price] : []
+      );
+      return { success: true, data: result };
+    } catch (error) {
+      return { success: false, error: String(error) };
+    }
+  }
+
+  async getVetKeysSystemStats(): Promise<ApiResult<{
+    encrypted_contents_count: number;
+    timelock_contents_count: number;
+    secure_messages_count: number;
+    premium_contents_count: number;
+  }>> {
+    try {
+      const actor = this.ensureActor();
+      const result = await actor.getVetKeysSystemStats();
+      return { 
+        success: true, 
+        data: {
+          encrypted_contents_count: Number(result.encrypted_contents_count),
+          timelock_contents_count: Number(result.timelock_contents_count),
+          secure_messages_count: Number(result.secure_messages_count),
+          premium_contents_count: Number(result.premium_contents_count),
+        }
+      };
+    } catch (error) {
+      return { success: false, error: String(error) };
+    }
+  }
+
+  // Secure API Key Management Functions
+  async storeSecureApiKey(
+    encrypted_key: Uint8Array,
+    identity_bytes: Uint8Array,
+    seed_bytes: Uint8Array,
+    provider: string
+  ): Promise<ApiResult<string>> {
+    try {
+      const actor = this.ensureActor();
+      const result = await actor.storeSecureApiKey(
+        encrypted_key,
+        identity_bytes,
+        seed_bytes,
+        provider
+      );
+      return { success: true, data: result };
+    } catch (error) {
+      return { success: false, error: String(error) };
+    }
+  }
+
+  async getSecureApiKey(provider: string): Promise<ApiResult<{
+    encrypted_key: Uint8Array;
+    identity_bytes: Uint8Array;
+    seed_bytes: Uint8Array;
+    provider: string;
+    created_at: number;
+  } | null>> {
+    try {
+      const actor = this.ensureActor();
+      const result = await actor.getSecureApiKey(provider);
+      if (result.length > 0) {
+        const config = result[0];
+        return { 
+          success: true, 
+          data: {
+            encrypted_key: config.encrypted_key,
+            identity_bytes: config.identity_bytes,
+            seed_bytes: config.seed_bytes,
+            provider: config.provider,
+            created_at: Number(config.created_at),
+          }
+        };
+      } else {
+        return { success: true, data: null };
+      }
+    } catch (error) {
+      return { success: false, error: String(error) };
+    }
+  }
+
+  async hasSecureApiKey(provider: string): Promise<ApiResult<boolean>> {
+    try {
+      const actor = this.ensureActor();
+      const result = await actor.hasSecureApiKey(provider);
+      return { success: true, data: result };
+    } catch (error) {
+      return { success: false, error: String(error) };
+    }
+  }
+
+  async removeSecureApiKey(provider: string): Promise<ApiResult<boolean>> {
+    try {
+      const actor = this.ensureActor();
+      const result = await actor.removeSecureApiKey(provider);
+      return { success: true, data: result };
+    } catch (error) {
+      return { success: false, error: String(error) };
+    }
+  }
+
+  async getUserApiProviders(): Promise<ApiResult<string[]>> {
+    try {
+      const actor = this.ensureActor();
+      const result = await actor.getUserApiProviders();
+      return { success: true, data: result };
+    } catch (error) {
+      return { success: false, error: String(error) };
+    }
+  }
+
+  async setSecureAIConfig(
+    provider: any,
+    encrypted_key: Uint8Array,
+    identity_bytes: Uint8Array,
+    seed_bytes: Uint8Array
+  ): Promise<ApiResult<string>> {
+    try {
+      const actor = this.ensureActor();
+      const result = await actor.setSecureAIConfig(
+        provider,
+        encrypted_key,
+        identity_bytes,
+        seed_bytes
+      );
+      if ('ok' in result) {
+        return { success: true, data: result.ok };
+      } else {
+        return { success: false, error: result.err };
+      }
+    } catch (error) {
+      return { success: false, error: String(error) };
+    }
+  }
+
+  async getSecureConfigStats(): Promise<ApiResult<{
+    total_configs: number;
+    unique_users: number;
+    providers: string[];
+  }>> {
+    try {
+      const actor = this.ensureActor();
+      const result = await actor.getSecureConfigStats();
+      return { 
+        success: true, 
+        data: {
+          total_configs: Number(result.total_configs),
+          unique_users: Number(result.unique_users),
+          providers: result.providers,
+        }
+      };
+    } catch (error) {
+      return { success: false, error: String(error) };
+    }
+  }
 }
 
 // Export singleton instance
