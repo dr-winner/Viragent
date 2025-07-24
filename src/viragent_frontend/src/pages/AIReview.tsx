@@ -51,7 +51,7 @@ const AIReview = () => {
     if (aiOutput.data && aiOutput.data.success && aiOutput.data.data) {
       setCaption(aiOutput.data.data.caption);
     }
-  }, [aiOutput.data]);
+  }, [aiOutput.data, aiOutput.dataUpdatedAt]); // Also listen to dataUpdatedAt for refetches
 
   const viralScore = 8.7;
   const engagementPrediction = {
@@ -81,20 +81,19 @@ const AIReview = () => {
 
   const handleRegenerate = async () => {
     try {
-      await generateAIContent.mutateAsync({
+      const result = await generateAIContent.mutateAsync({
         mediaId,
         prompt: "Regenerate content with improved engagement and creativity",
         tone: "balanced",
         platform: "multi-platform"
       });
       
-      // Refresh the AI output data
-      aiOutput.refetch();
+      // The generateAIContent returns a string directly, not an object with caption
+      if (result.success && result.data) {
+        setCaption(result.data); // result.data is the generated text string
+      }
       
-      toast({
-        title: "Content Regenerated",
-        description: "New AI content has been generated successfully",
-      });
+      // The mutation already invalidates the query and shows toast, so we don't need to manually refetch
     } catch (error) {
       // Error handling is done in the mutation's onError callback
       console.error('Error regenerating content:', error);
@@ -146,25 +145,25 @@ const AIReview = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-6xl mx-auto space-y-8">
+    <div className="min-h-screen bg-background">
+      <div className="max-w-7xl mx-auto p-6">
         {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          className="text-center space-y-4 mb-8"
         >
-          <h1 className="text-4xl font-space-grotesk font-bold mb-2">
+          <h1 className="text-4xl font-space-grotesk font-bold gradient-text">
             AI Content Review
           </h1>
-          <p className="text-muted-foreground">
-            Review and refine your AI-generated content before scheduling
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            Review your AI-generated content, make adjustments, and schedule for optimal engagement
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-          {/* Main Content Area */}
-          <div className="xl:col-span-2 space-y-6">
+        <div className="grid lg:grid-cols-3 gap-6">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-6">
             {/* Generated Caption */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -271,7 +270,7 @@ const AIReview = () => {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Viral Score */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
@@ -304,21 +303,21 @@ const AIReview = () => {
               transition={{ duration: 0.6, delay: 0.3 }}
             >
               <Card className="web3-card">
-                <h3 className="text-lg font-space-grotesk font-semibold mb-4 flex items-center gap-2">
+                <h3 className="text-lg font-space-grotesk font-semibold mb-3 flex items-center gap-2">
                   <Share2 className="h-5 w-5 text-accent" />
                   Platform Selection
                 </h3>
 
-                <div className="space-y-3 mb-4">
+                <div className="space-y-2 mb-3">
                   {[
-                    { id: 'twitter', name: 'Twitter', icon: '🐦', color: '#1DA1F2' },
-                    { id: 'instagram', name: 'Instagram', icon: '📷', color: '#E4405F' },
-                    { id: 'linkedin', name: 'LinkedIn', icon: '💼', color: '#0077B5' },
-                    { id: 'tiktok', name: 'TikTok', icon: '🎵', color: '#FF0050' }
+                    { id: 'twitter', name: 'Twitter', icon: '🐦' },
+                    { id: 'instagram', name: 'Instagram', icon: '📷' },
+                    { id: 'linkedin', name: 'LinkedIn', icon: '💼' },
+                    { id: 'tiktok', name: 'TikTok', icon: '🎵' }
                   ].map((platform) => (
                     <div
                       key={platform.id}
-                      className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${
+                      className={`flex items-center justify-between p-2 rounded-lg border cursor-pointer transition-all ${
                         selectedPlatforms.includes(platform.id)
                           ? 'border-primary bg-primary/10'
                           : 'border-border hover:border-primary/50'
@@ -331,29 +330,25 @@ const AIReview = () => {
                         );
                       }}
                     >
-                      <div className="flex items-center gap-3">
-                        <span className="text-lg">{platform.icon}</span>
-                        <span className="font-medium">{platform.name}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm">{platform.icon}</span>
+                        <span className="text-sm font-medium">{platform.name}</span>
                       </div>
                       {selectedPlatforms.includes(platform.id) && (
-                        <Check className="h-4 w-4 text-primary" />
+                        <Check className="h-3 w-3 text-primary" />
                       )}
                     </div>
                   ))}
                 </div>
 
-                <div className="space-y-2">
-                  <Button variant="glass" className="w-full justify-start group">
-                    <Eye className="mr-2 h-4 w-4 group-hover:scale-110 transition-transform" />
-                    Preview on Platforms
+                <div className="grid grid-cols-2 gap-2">
+                  <Button variant="glass" size="sm" className="text-xs">
+                    <Eye className="mr-1 h-3 w-3" />
+                    Preview
                   </Button>
-                  <Button variant="glass" className="w-full justify-start group">
-                    <Share2 className="mr-2 h-4 w-4 group-hover:scale-110 transition-transform" />
-                    Share for Review
-                  </Button>
-                  <Button variant="glass" className="w-full justify-start group">
-                    <Sparkles className="mr-2 h-4 w-4 group-hover:scale-110 transition-transform" />
-                    Alternative Versions
+                  <Button variant="glass" size="sm" className="text-xs">
+                    <Share2 className="mr-1 h-3 w-3" />
+                    Share
                   </Button>
                 </div>
               </Card>
@@ -366,28 +361,28 @@ const AIReview = () => {
               transition={{ duration: 0.6, delay: 0.2 }}
             >
               <Card className="web3-card">
-                <h3 className="text-lg font-space-grotesk font-semibold mb-4 flex items-center gap-2">
+                <h3 className="text-lg font-space-grotesk font-semibold mb-3 flex items-center gap-2">
                   <Target className="h-5 w-5 text-primary" />
                   Predicted Engagement
                 </h3>
 
-                <div className="space-y-4">
+                <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Likes</span>
-                    <span className="font-medium">{engagementPrediction.likes.toLocaleString()}</span>
+                    <span className="text-sm font-medium">{engagementPrediction.likes.toLocaleString()}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Shares</span>
-                    <span className="font-medium">{engagementPrediction.shares}</span>
+                    <span className="text-sm font-medium">{engagementPrediction.shares}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Comments</span>
-                    <span className="font-medium">{engagementPrediction.comments}</span>
+                    <span className="text-sm font-medium">{engagementPrediction.comments}</span>
                   </div>
                   <Separator />
                   <div className="flex items-center justify-between font-medium">
-                    <span className="text-muted-foreground">Total Reach</span>
-                    <span className="text-primary">{engagementPrediction.reach.toLocaleString()}</span>
+                    <span className="text-sm text-muted-foreground">Total Reach</span>
+                    <span className="text-sm text-primary">{engagementPrediction.reach.toLocaleString()}</span>
                   </div>
                 </div>
               </Card>
@@ -401,21 +396,21 @@ const AIReview = () => {
             >
               <Button 
                 variant="web3" 
-                size="lg" 
+                size="default" 
                 className="w-full group"
                 onClick={handleSchedulePost}
                 disabled={selectedPlatforms.length === 0 || schedulePost.isPending}
               >
                 {schedulePost.isPending ? (
                   <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Scheduling Posts...
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Scheduling...
                   </>
                 ) : (
                   <>
-                    <Calendar className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
+                    <Calendar className="mr-2 h-4 w-4 group-hover:scale-110 transition-transform" />
                     Schedule Posts ({selectedPlatforms.length})
-                    <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                    <ArrowRight className="ml-2 h-3 w-3 group-hover:translate-x-1 transition-transform" />
                   </>
                 )}
               </Button>
