@@ -131,3 +131,9 @@ jspm_packages/
 # Temporary folders
 tmp/
 temp/
+
+# Development scripts and test files
+scripts/
+test-*.js
+test-*.ts
+test-*.sh

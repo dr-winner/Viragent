@@ -157,22 +157,16 @@ const Schedule = () => {
         await schedulePostMutation.mutateAsync(postData);
       }
       
-      toast({ 
-        title: "Success", 
-        description: `Scheduled ${selectedPlatforms.length} post(s) for ${scheduledAt.toLocaleDateString()}` 
-      });
-      
-      // Refresh scheduled posts
-      scheduledPostsQuery.refetch();
+      // The mutation already handles success toast and query invalidation
+      // No need to manually call toast or refetch here
       
     } catch (err) {
-      toast({ 
-        title: "Error", 
-        description: "Failed to schedule posts. Please try again.", 
-        variant: "destructive" 
-      });
+      // Error handling is already done in the mutation's onError callback
+      console.error('Error scheduling posts:', err);
     }
-  };  return (
+  };
+
+  return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
