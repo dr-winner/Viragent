@@ -215,7 +215,7 @@ actor class ViragentBackend() = this {
             if (openaiApiKey == "") {
               #err("OpenAI API key not configured. Please set your OpenAI API key.")
             } else {
-              await AIService.generateContent(#OpenAI, openaiApiKey, request, ic.http_request)
+              await AIService.generateAIContent("openai", openaiApiKey, request, ic.http_request)
             }
           };
           case (#GitHub) {
