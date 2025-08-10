@@ -1,6 +1,5 @@
 import { motion } from 'framer-motion';
 import { useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -8,9 +7,6 @@ import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
-import { useToast } from '@/hooks/use-toast';
-import { useGenerateAIContent, useUploadMedia, useBackendInit } from '@/hooks/useBackend';
-import { MediaItem } from '@/types/backend';
 import {
   Upload as UploadIcon,
   Image,
@@ -28,15 +24,8 @@ import {
 } from 'lucide-react';
 
 const Upload = () => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const generateAIContent = useGenerateAIContent();
-  const uploadMedia = useUploadMedia();
-  const backendInit = useBackendInit();
-  
   const [dragActive, setDragActive] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
-  const [uploadedMediaIds, setUploadedMediaIds] = useState<string[]>([]);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [toneSettings, setToneSettings] = useState({
@@ -77,7 +66,7 @@ const Upload = () => {
     }
   }, []);
 
-  const handleFiles = async (files: FileList) => {
+  const handleFiles = (files: FileList) => {
     const newFiles = Array.from(files).filter(file => 
       file.type.startsWith('image/') || 
       file.type.startsWith('video/') || 
@@ -85,47 +74,9 @@ const Upload = () => {
     );
     
     setUploadedFiles(prev => [...prev, ...newFiles]);
-    
-    // Upload files to backend
-    setIsUploading(true);
-    setUploadProgress(0);
-    
-    try {
-      const uploadPromises = newFiles.map(async (file, index) => {
-        const mediaItem: MediaItem = {
-          id: `media_${Date.now()}_${index}`,
-          owner: '', // Will be set by backend
-          url: URL.createObjectURL(file), // Temporary URL for preview
-          mediaType: file.type.startsWith('image/') ? 'image' : 
-                    file.type.startsWith('video/') ? 'video' : 'audio',
-          status: 'uploaded',
-          createdAt: Date.now(),
-        };
-        
-        const result = await uploadMedia.mutateAsync(mediaItem);
-        if (result.success) {
-          return mediaItem.id;
-        }
-        throw new Error(result.error || 'Upload failed');
-      });
-      
-      const mediaIds = await Promise.all(uploadPromises);
-      setUploadedMediaIds(prev => [...prev, ...mediaIds]);
-      setUploadProgress(100);
-      
-      toast({
-        title: "Upload Complete",
-        description: `Successfully uploaded ${newFiles.length} file(s)`,
-      });
-    } catch (error) {
-      toast({
-        title: "Upload Failed",
-        description: "Failed to upload some files. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsUploading(false);
-    }
+    // TODO: Implement real upload logic here (call backend API)
+    // For now, show an error or disable upload if not implemented
+    // setIsUploading(true); setUploadProgress(0); ...
   };
 
   const removeFile = (index: number) => {
@@ -160,44 +111,6 @@ const Upload = () => {
     };
     
     setToneSettings(presetSettings[presetId as keyof typeof presetSettings] || presetSettings.balanced);
-  };
-
-  const handleGenerateAIContent = async () => {
-    if (uploadedMediaIds.length === 0 && uploadedFiles.length === 0) {
-      toast({
-        title: "Error",
-        description: "Please upload media files first",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Use the first uploaded media ID or create a temporary one
-    const mediaId = uploadedMediaIds.length > 0 ? uploadedMediaIds[0] : `temp_${Date.now()}`;
-    
-    // Create prompt based on tone settings and uploaded files
-    const toneDescription = `Creativity: ${toneSettings.creativity[0]}/10, Professionalism: ${toneSettings.professionalism[0]}/10, Humor: ${toneSettings.humor[0]}/10, Urgency: ${toneSettings.urgency[0]}/10, Inclusivity: ${toneSettings.inclusivity[0]}/10`;
-    const prompt = `Generate social media content for uploaded media with tone settings: ${toneDescription}. Selected preset: ${selectedTonePreset}. Create engaging content that matches these tone preferences.`;
-    
-    try {
-      await generateAIContent.mutateAsync({
-        mediaId,
-        prompt,
-        tone: selectedTonePreset,
-        platform: "multi-platform"
-      });
-      
-      // Navigate to AI Review page after successful generation
-      navigate('/ai-review', { 
-        state: { 
-          mediaId, 
-          generatedContent: true 
-        } 
-      });
-    } catch (error) {
-      // Error handling is done in the mutation's onError callback
-      console.error('Error generating AI content:', error);
-    }
   };
 
   return (
@@ -451,21 +364,11 @@ const Upload = () => {
                 variant="web3"
                 size="lg"
                 className="w-full group"
-                disabled={uploadedFiles.length === 0 || generateAIContent.isPending}
-                onClick={handleGenerateAIContent}
+                disabled={uploadedFiles.length === 0}
               >
-                {generateAIContent.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Generating Content...
-                  </>
-                ) : (
-                  <>
-                    <Brain className="mr-2 h-5 w-5 group-hover:animate-pulse" />
-                    Generate AI Content
-                    <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                  </>
-                )}
+                <Brain className="mr-2 h-5 w-5 group-hover:animate-pulse" />
+                Generate AI Content
+                <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Button>
             </motion.div>
           </motion.div>

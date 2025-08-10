@@ -5,17 +5,8 @@ import path from "path";
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
-    host: "localhost",
-    port: 5175,
-    cors: true,
-    proxy: {
-      // Proxy API calls to avoid CORS issues
-      '/api': {
-        target: 'http://localhost:4943',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
-      },
-    },
+    host: "::",
+    port: 8080,
   },
   plugins: [
     react(),
@@ -31,8 +22,7 @@ export default defineConfig(({ mode }) => ({
       '@dfinity/auth-client',
       '@dfinity/identity',
       '@dfinity/principal',
-      '@dfinity/candid',
-      '@dfinity/vetkeys'
+      '@dfinity/candid'
     ],
   },
   define: {

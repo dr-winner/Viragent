@@ -4,22 +4,12 @@
 **/declarations/
 canister_ids.json
 
-# Environment variables and secrets
+# Environment variables
 .env
 .env.local
 .env.development
 .env.test
 .env.production
-*.env
-.env.*
-
-# API Keys and sensitive data
-.secrets
-.keys
-**/secrets/
-**/keys/
-api_keys.txt
-config.local.*
 
 # Node.js and npm
 node_modules/
@@ -131,9 +121,3 @@ jspm_packages/
 # Temporary folders
 tmp/
 temp/
-
-# Development scripts and test files
-scripts/
-test-*.js
-test-*.ts
-test-*.sh

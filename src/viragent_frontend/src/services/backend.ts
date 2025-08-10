@@ -17,10 +17,7 @@ import {
   EngagementData, 
   SystemStats, 
   HealthStatus,
-  ApiResult,
-  UserProfile,
-  AIProvider,
-  PlatformRecommendations
+  ApiResult 
 } from '../types/backend';
 
 class ViragentBackendService {
@@ -39,14 +36,14 @@ class ViragentBackendService {
     });
 
     // Fetch root key for local development
-    if (import.meta.env.MODE === 'development') {
+    if (process.env.NODE_ENV === 'development') {
       await this.agent.fetchRootKey();
     }
 
     // Get the canister ID from environment or dfx
-    const canisterId = import.meta.env.VITE_VIRAGENT_BACKEND_CANISTER_ID || 
-                      import.meta.env.VITE_CANISTER_ID_VIRAGENT_BACKEND ||
-                      'uxrrr-q7777-77774-qaaaq-cai'; // current deployed backend canister ID
+    const canisterId = process.env.VITE_VIRAGENT_BACKEND_CANISTER_ID || 
+                      process.env.CANISTER_ID_VIRAGENT_BACKEND ||
+                      'rrkah-fqaaa-aaaaa-aaaaq-cai'; // default local canister ID
 
     this.actor = Actor.createActor<BackendService>(idlFactory, {
       agent: this.agent,
@@ -160,17 +157,12 @@ class ViragentBackendService {
   // Auto-register user with Internet Identity (no email required)
   async autoRegister(): Promise<ApiResult<string>> {
     try {
-      // Check if already registered first
-      const isReg = await this.isRegistered();
-      if (isReg.success && isReg.data) {
-        return { success: true, data: "Already registered" };
-      }
-      
-      const actor = this.ensureActor();
+      const actor = this.getActor();
       const result = await actor.register();
       return { success: true, data: result };
     } catch (error) {
-      return { success: false, error: String(error) };
+      console.error('Auto-registration failed:', error);
+      return { success: false, error: error instanceof Error ? error.message : 'Auto-registration failed' };
     }
   }
 
@@ -500,277 +492,8 @@ class ViragentBackendService {
   async initBackend(): Promise<ApiResult<string>> {
     try {
       const actor = this.ensureActor();
-      const result = await actor.initSimple();
+      const result = await actor.init();
       return { success: true, data: result };
-    } catch (error) {
-      return { success: false, error: String(error) };
-    }
-  }
-
-  // Missing methods to sync with backend
-  async getPlatformRecommendations(platform: string): Promise<ApiResult<PlatformRecommendations>> {
-    try {
-      const actor = this.ensureActor();
-      const result = await actor.getPlatformRecommendations(platform);
-      const data: PlatformRecommendations = {
-        maxCaptionLength: this.bigIntToNumber(result.maxCaptionLength),
-        optimalHashtagCount: this.bigIntToNumber(result.optimalHashtagCount),
-        bestTones: result.bestTones,
-        features: result.features,
-      };
-      return { success: true, data };
-    } catch (error) {
-      return { success: false, error: String(error) };
-    }
-  }
-
-  async testTwitterPost(content: string, accessToken: string): Promise<ApiResult<string>> {
-    try {
-      const actor = this.ensureActor();
-      const result = await actor.testTwitterPost(content, accessToken);
-      return { success: true, data: result };
-    } catch (error) {
-      return { success: false, error: String(error) };
-    }
-  }
-
-  async scheduleTwitterPost(content: string, scheduledAt: number, accessToken: string): Promise<ApiResult<string>> {
-    try {
-      const actor = this.ensureActor();
-      const result = await actor.scheduleTwitterPost(content, BigInt(scheduledAt), accessToken);
-      return { success: true, data: result };
-    } catch (error) {
-      return { success: false, error: String(error) };
-    }
-  }
-
-  async initWithOpenAI(): Promise<ApiResult<string>> {
-    try {
-      const actor = this.ensureActor();
-      const result = await actor.initWithOpenAI();
-      return { success: true, data: result };
-    } catch (error) {
-      return { success: false, error: String(error) };
-    }
-  }
-
-  async tick(): Promise<ApiResult<void>> {
-    try {
-      const actor = this.ensureActor();
-      await actor.tick();
-      return { success: true, data: undefined };
-    } catch (error) {
-      return { success: false, error: String(error) };
-    }
-  }
-
-  // VetKeys Integration Functions
-  async storeEncryptedContent(
-    encrypted_data: Uint8Array,
-    identity_bytes: Uint8Array,
-    seed_bytes: Uint8Array,
-    content_type: string,
-    metadata?: string
-  ): Promise<ApiResult<string>> {
-    try {
-      const actor = this.ensureActor();
-      const result = await actor.storeEncryptedContent(
-        encrypted_data,
-        identity_bytes,
-        seed_bytes,
-        content_type,
-        metadata ? [metadata] : []
-      );
-      return { success: true, data: result };
-    } catch (error) {
-      return { success: false, error: String(error) };
-    }
-  }
-
-  async sendSecureMessage(
-    to_principal: Principal,
-    encrypted_data: Uint8Array,
-    identity_bytes: Uint8Array,
-    seed_bytes: Uint8Array
-  ): Promise<ApiResult<string>> {
-    try {
-      const actor = this.ensureActor();
-      const result = await actor.sendSecureMessage(
-        to_principal,
-        encrypted_data,
-        identity_bytes,
-        seed_bytes
-      );
-      return { success: true, data: result };
-    } catch (error) {
-      return { success: false, error: String(error) };
-    }
-  }
-
-  async createPremiumContent(
-    encrypted_data: Uint8Array,
-    access_level: string,
-    access_key: Uint8Array,
-    price?: number
-  ): Promise<ApiResult<string>> {
-    try {
-      const actor = this.ensureActor();
-      const result = await actor.createPremiumContent(
-        encrypted_data,
-        access_level,
-        access_key,
-        price ? [price] : []
-      );
-      return { success: true, data: result };
-    } catch (error) {
-      return { success: false, error: String(error) };
-    }
-  }
-
-  async getVetKeysSystemStats(): Promise<ApiResult<{
-    encrypted_contents_count: number;
-    timelock_contents_count: number;
-    secure_messages_count: number;
-    premium_contents_count: number;
-  }>> {
-    try {
-      const actor = this.ensureActor();
-      const result = await actor.getVetKeysSystemStats();
-      return { 
-        success: true, 
-        data: {
-          encrypted_contents_count: Number(result.encrypted_contents_count),
-          timelock_contents_count: Number(result.timelock_contents_count),
-          secure_messages_count: Number(result.secure_messages_count),
-          premium_contents_count: Number(result.premium_contents_count),
-        }
-      };
-    } catch (error) {
-      return { success: false, error: String(error) };
-    }
-  }
-
-  // Secure API Key Management Functions
-  async storeSecureApiKey(
-    encrypted_key: Uint8Array,
-    identity_bytes: Uint8Array,
-    seed_bytes: Uint8Array,
-    provider: string
-  ): Promise<ApiResult<string>> {
-    try {
-      const actor = this.ensureActor();
-      const result = await actor.storeSecureApiKey(
-        encrypted_key,
-        identity_bytes,
-        seed_bytes,
-        provider
-      );
-      return { success: true, data: result };
-    } catch (error) {
-      return { success: false, error: String(error) };
-    }
-  }
-
-  async getSecureApiKey(provider: string): Promise<ApiResult<{
-    encrypted_key: Uint8Array;
-    identity_bytes: Uint8Array;
-    seed_bytes: Uint8Array;
-    provider: string;
-    created_at: number;
-  } | null>> {
-    try {
-      const actor = this.ensureActor();
-      const result = await actor.getSecureApiKey(provider);
-      if (result.length > 0) {
-        const config = result[0];
-        return { 
-          success: true, 
-          data: {
-            encrypted_key: config.encrypted_key,
-            identity_bytes: config.identity_bytes,
-            seed_bytes: config.seed_bytes,
-            provider: config.provider,
-            created_at: Number(config.created_at),
-          }
-        };
-      } else {
-        return { success: true, data: null };
-      }
-    } catch (error) {
-      return { success: false, error: String(error) };
-    }
-  }
-
-  async hasSecureApiKey(provider: string): Promise<ApiResult<boolean>> {
-    try {
-      const actor = this.ensureActor();
-      const result = await actor.hasSecureApiKey(provider);
-      return { success: true, data: result };
-    } catch (error) {
-      return { success: false, error: String(error) };
-    }
-  }
-
-  async removeSecureApiKey(provider: string): Promise<ApiResult<boolean>> {
-    try {
-      const actor = this.ensureActor();
-      const result = await actor.removeSecureApiKey(provider);
-      return { success: true, data: result };
-    } catch (error) {
-      return { success: false, error: String(error) };
-    }
-  }
-
-  async getUserApiProviders(): Promise<ApiResult<string[]>> {
-    try {
-      const actor = this.ensureActor();
-      const result = await actor.getUserApiProviders();
-      return { success: true, data: result };
-    } catch (error) {
-      return { success: false, error: String(error) };
-    }
-  }
-
-  async setSecureAIConfig(
-    provider: any,
-    encrypted_key: Uint8Array,
-    identity_bytes: Uint8Array,
-    seed_bytes: Uint8Array
-  ): Promise<ApiResult<string>> {
-    try {
-      const actor = this.ensureActor();
-      const result = await actor.setSecureAIConfig(
-        provider,
-        encrypted_key,
-        identity_bytes,
-        seed_bytes
-      );
-      if ('ok' in result) {
-        return { success: true, data: result.ok };
-      } else {
-        return { success: false, error: result.err };
-      }
-    } catch (error) {
-      return { success: false, error: String(error) };
-    }
-  }
-
-  async getSecureConfigStats(): Promise<ApiResult<{
-    total_configs: number;
-    unique_users: number;
-    providers: string[];
-  }>> {
-    try {
-      const actor = this.ensureActor();
-      const result = await actor.getSecureConfigStats();
-      return { 
-        success: true, 
-        data: {
-          total_configs: Number(result.total_configs),
-          unique_users: Number(result.unique_users),
-          providers: result.providers,
-        }
-      };
     } catch (error) {
       return { success: false, error: String(error) };
     }

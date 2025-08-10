@@ -123,7 +123,7 @@ module AIService {
     
     try {
       Debug.print("Making OpenAI API request...");
-      let response = await httpOutcall<system>(httpRequest);
+      let response = await httpOutcall(httpRequest);
       Debug.print("Response status: " # Nat.toText(response.status));
       if (response.status == 200) {
         let responseText = switch (Text.decodeUtf8(Blob.fromArray(response.body))) {
@@ -182,7 +182,7 @@ module AIService {
     
     try {
       Debug.print("Making GitHub Models API request...");
-      let response = await httpOutcall<system>(httpRequest);
+      let response = await httpOutcall(httpRequest);
       Debug.print("Response status: " # Nat.toText(response.status));
       if (response.status == 200) {
         let responseText = switch (Text.decodeUtf8(Blob.fromArray(response.body))) {

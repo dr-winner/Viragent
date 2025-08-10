@@ -44,20 +44,6 @@ export interface EngagementData {
   timestamp: number; // Convert from bigint
 }
 
-export interface UserProfile {
-  principal: string; // Principal as string
-  registeredAt: number; // Convert from bigint
-}
-
-export type AIProvider = 'OpenAI' | 'GitHub' | 'Claude';
-
-export interface PlatformRecommendations {
-  maxCaptionLength: number;
-  optimalHashtagCount: number;
-  bestTones: string[];
-  features: string[];
-}
-
 export interface SystemStats {
   totalUsers: number;
   totalMedia: number;

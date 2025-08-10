@@ -49,13 +49,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const initBackendService = async (identity: Identity) => {
     try {
-      console.log('🔄 Initializing backend service...');
       await backendService.init(identity);
-      console.log('✅ Backend service initialized');
       
       // Auto-register user if not already registered
       const isRegResult = await backendService.isRegistered();
-      console.log('📋 Registration check result:', isRegResult);
       if (isRegResult.success && !isRegResult.data) {
         console.log('User not registered, auto-registering with Internet Identity...');
         const regResult = await backendService.autoRegister();
@@ -67,9 +64,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
       
       setIsBackendReady(true);
-      console.log('✅ Backend service ready');
     } catch (error) {
-      console.error('❌ Failed to initialize backend service:', error);
+      console.error('Failed to initialize backend service:', error);
       toast({
         title: "Backend Error",
         description: "Failed to connect to backend service. Some features may not work.",
@@ -80,18 +76,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const initAuthClient = async () => {
     try {
-      console.log('🔄 Initializing auth client...');
       const client = await AuthClient.create();
       setAuthClient(client);
 
       const isAuth = await client.isAuthenticated();
-      console.log('🔐 Authentication status:', isAuth);
       setIsAuthenticated(isAuth);
 
       if (isAuth) {
         const identity = client.getIdentity();
         const principal = identity.getPrincipal();
-        console.log('👤 Principal:', principal.toString());
         setIdentity(identity);
         setPrincipal(principal);
         
@@ -99,7 +92,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         await initBackendService(identity);
       }
     } catch (error) {
-      console.error('❌ Failed to initialize auth client:', error);
+      console.error('Failed to initialize auth client:', error);
       toast({
         title: "Authentication Error",
         description: "Failed to initialize authentication. Please refresh the page.",
@@ -107,7 +100,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
     } finally {
       setIsLoading(false);
-      console.log('✅ Auth initialization complete');
     }
   };
 
