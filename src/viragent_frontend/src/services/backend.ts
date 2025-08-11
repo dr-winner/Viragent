@@ -41,9 +41,8 @@ class ViragentBackendService {
     }
 
     // Get the canister ID from environment or dfx
-    const canisterId = process.env.VITE_VIRAGENT_BACKEND_CANISTER_ID || 
-                      process.env.CANISTER_ID_VIRAGENT_BACKEND ||
-                      'rrkah-fqaaa-aaaaa-aaaaq-cai'; // default local canister ID
+    const canisterId = import.meta.env.VITE_VIRAGENT_BACKEND_CANISTER_ID || 
+                      'uxrrr-q7777-77774-qaaaq-cai'; // correct local canister ID from .env
 
     this.actor = Actor.createActor<BackendService>(idlFactory, {
       agent: this.agent,
@@ -56,6 +55,11 @@ class ViragentBackendService {
       throw new Error('Backend service not initialized. Call init() first.');
     }
     return this.actor;
+  }
+
+  // Alias for ensureActor to maintain compatibility
+  private getActor(): BackendService {
+    return this.ensureActor();
   }
 
   // Helper function to convert BigInt to number
@@ -311,15 +315,17 @@ class ViragentBackendService {
   }
 
   // New AI Content Generation Methods
-  async generateAIContent(
-    mediaId: string, 
+  async generateContentDirect(
     prompt: string, 
     tone: string, 
     platform: string
   ): Promise<ApiResult<string>> {
     try {
+      console.log('generateContentDirect called with:', { prompt, tone, platform });
       const actor = this.ensureActor();
-      const result = await actor.generateAIContent(mediaId, prompt, tone, platform);
+      console.log('Actor obtained, calling backend...');
+      const result = await actor.generateContentDirect(prompt, tone, platform);
+      console.log('Backend response:', result);
       
       if ('ok' in result) {
         return { success: true, data: result.ok };
@@ -327,6 +333,31 @@ class ViragentBackendService {
         return { success: false, error: result.err };
       }
     } catch (error) {
+      console.error('generateContentDirect error:', error);
+      return { success: false, error: String(error) };
+    }
+  }
+
+  async generateAIContent(
+    mediaId: string, 
+    prompt: string, 
+    tone: string, 
+    platform: string
+  ): Promise<ApiResult<string>> {
+    try {
+      console.log('generateAIContent called with:', { mediaId, prompt, tone, platform });
+      const actor = this.ensureActor();
+      console.log('Actor obtained, calling backend...');
+      const result = await actor.generateAIContent(mediaId, prompt, tone, platform);
+      console.log('Backend response:', result);
+      
+      if ('ok' in result) {
+        return { success: true, data: result.ok };
+      } else {
+        return { success: false, error: result.err };
+      }
+    } catch (error) {
+      console.error('generateAIContent error:', error);
       return { success: false, error: String(error) };
     }
   }
@@ -492,7 +523,7 @@ class ViragentBackendService {
   async initBackend(): Promise<ApiResult<string>> {
     try {
       const actor = this.ensureActor();
-      const result = await actor.init();
+      const result = await actor.initSimple(); // Use initSimple since init() requires parameters
       return { success: true, data: result };
     } catch (error) {
       return { success: false, error: String(error) };

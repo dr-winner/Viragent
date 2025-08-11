@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -7,6 +8,8 @@ import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/hooks/use-toast';
+import { backendService } from '@/services/backend';
 import {
   Upload as UploadIcon,
   Image,
@@ -24,6 +27,8 @@ import {
 } from 'lucide-react';
 
 const Upload = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [dragActive, setDragActive] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -74,9 +79,65 @@ const Upload = () => {
     );
     
     setUploadedFiles(prev => [...prev, ...newFiles]);
-    // TODO: Implement real upload logic here (call backend API)
-    // For now, show an error or disable upload if not implemented
-    // setIsUploading(true); setUploadProgress(0); ...
+    
+    // Simulate upload for now - in production you'd upload to backend
+    if (newFiles.length > 0) {
+      setIsUploading(true);
+      setUploadProgress(0);
+      
+      // Simulate progress
+      const interval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev >= 100) {
+            clearInterval(interval);
+            setIsUploading(false);
+            toast({
+              title: "Upload Complete! ✅",
+              description: "Your media files are ready for AI content generation.",
+            });
+            return 100;
+          }
+          return prev + 10;
+        });
+      }, 200);
+    }
+  };
+
+  const handleGenerateContent = async () => {
+    if (uploadedFiles.length === 0) {
+      toast({
+        title: "No Media Files",
+        description: "Please upload at least one media file before generating content.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Create a media ID based on the first file
+      const mediaId = `media_${Date.now()}_${uploadedFiles[0].name.replace(/[^a-zA-Z0-9]/g, '_')}`;
+      
+      // Save tone configuration to backend (optional)
+      const toneConfig = {
+        id: `tone_${Date.now()}`,
+        creativity: toneSettings.creativity[0],
+        professionalism: toneSettings.professionalism[0],
+        humor: toneSettings.humor[0],
+        urgency: toneSettings.urgency[0],
+        inclusivity: toneSettings.inclusivity[0],
+        preset: selectedTonePreset
+      };
+
+      // Navigate to AI generation with media info
+      navigate(`/ai-generation?mediaId=${mediaId}&preset=${selectedTonePreset}`);
+    } catch (error) {
+      console.error('Error preparing for AI generation:', error);
+      toast({
+        title: "Error",
+        description: "Failed to prepare for content generation. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const removeFile = (index: number) => {
@@ -365,6 +426,7 @@ const Upload = () => {
                 size="lg"
                 className="w-full group"
                 disabled={uploadedFiles.length === 0}
+                onClick={handleGenerateContent}
               >
                 <Brain className="mr-2 h-5 w-5 group-hover:animate-pulse" />
                 Generate AI Content

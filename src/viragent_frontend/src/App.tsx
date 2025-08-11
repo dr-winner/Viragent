@@ -10,6 +10,7 @@ import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Upload from "./pages/Upload";
+import AIGeneration from "./pages/AIGeneration";
 import AIReview from "./pages/AIReview";
 import Schedule from "./pages/Schedule";
 import NotFound from "./pages/NotFound";
@@ -33,6 +34,8 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/auth/twitter" element={<TwitterLogin />} />
             <Route path="/auth/twitter/callback" element={<TwitterCallback />} />
+            <Route path="/auth/instagram/callback" element={<TwitterCallback />} /> {/* Reuse callback component */}
+            <Route path="/auth/linkedin/callback" element={<TwitterCallback />} /> {/* Reuse callback component */}
             <Route path="/twitter-test" element={<TwitterTest />} />
             <Route path="/social-accounts" element={<SocialAccounts />} />
             <Route 
@@ -48,6 +51,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Upload />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/ai-generation" 
+              element={
+                <ProtectedRoute>
+                  <AIGeneration />
                 </ProtectedRoute>
               } 
             />

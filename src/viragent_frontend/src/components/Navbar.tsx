@@ -23,6 +23,7 @@ export const Navbar = () => {
   const navigationItems = [
     { path: '/dashboard', label: 'Dashboard', icon: BarChart3 },
     { path: '/upload', label: 'Upload', icon: Upload },
+    { path: '/ai-generation', label: 'AI Generate', icon: Brain },
     { path: '/ai-review', label: 'AI Review', icon: Brain },
     { path: '/schedule', label: 'Schedule', icon: Calendar },
   ];

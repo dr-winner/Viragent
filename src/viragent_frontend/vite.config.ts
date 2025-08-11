@@ -28,4 +28,6 @@ export default defineConfig(({ mode }) => ({
   define: {
     global: 'globalThis',
   },
+  // Make environment variables available to the app
+  envDir: '../../', // Look for .env in the project root
 }));

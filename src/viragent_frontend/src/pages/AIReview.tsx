@@ -1,11 +1,14 @@
 import { motion } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/hooks/use-toast';
+import { backendService } from '@/services/backend';
 import {
   Brain,
   Sparkles,
@@ -19,13 +22,25 @@ import {
   Eye,
   Calendar,
   ArrowRight,
+  ArrowLeft,
   Zap,
   Target,
   Share2
 } from 'lucide-react';
 
 const AIReview = () => {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  
+  // Get content from URL params
+  const urlContent = searchParams.get('content');
+  const mediaId = searchParams.get('mediaId');
+  const platform = searchParams.get('platform') || 'twitter';
+  const tone = searchParams.get('tone') || 'professional';
+  
   const [caption, setCaption] = useState(
+    urlContent ? decodeURIComponent(urlContent) : 
     "🚀 Just launched our revolutionary AI-powered social media automation platform! Say goodbye to writer's block and hello to viral content. Our advanced algorithms analyze trending patterns to create posts that actually engage your audience. Ready to transform your social media game? #AI #SocialMedia #Innovation #WebDevelopment #TechStartup"
   );
   const [isRegenerating, setIsRegenerating] = useState(false);
@@ -58,13 +73,48 @@ const AIReview = () => {
   ];
 
   const handleRegenerate = async () => {
+    if (!mediaId) {
+      toast({
+        title: "Cannot Regenerate",
+        description: "Missing media information. Please start from the generation page.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsRegenerating(true);
-    // TODO: Call real backend API to regenerate AI content
-    // For now, show an error or placeholder if not implemented
-    setTimeout(() => {
+    
+    try {
+      const result = await backendService.generateAIContent(
+        mediaId,
+        "Regenerate the previous content with a different approach",
+        tone,
+        platform
+      );
+
+      if (result.success) {
+        setCaption(result.data);
+        toast({
+          title: "Content Regenerated! ✨",
+          description: "Your content has been refreshed with a new approach.",
+        });
+      } else {
+        toast({
+          title: "Regeneration Failed",
+          description: result.error,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Regeneration error:', error);
+      toast({
+        title: "Error",
+        description: "Something went wrong during regeneration. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
       setIsRegenerating(false);
-      // setCaption(newCaptionFromBackend);
-    }, 2000);
+    }
   };
 
   const handleCopy = () => {
@@ -359,7 +409,16 @@ const AIReview = () => {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
+              className="space-y-3"
             >
+              <Button
+                variant="outline"
+                onClick={() => navigate('/ai-generation')}
+                className="w-full group"
+              >
+                <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform" />
+                Back to Generation
+              </Button>
               <Button variant="web3" size="lg" className="w-full group">
                 <Calendar className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
                 Schedule Posts

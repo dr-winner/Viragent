@@ -74,12 +74,22 @@ Viragent is built using a modern, decentralized architecture:
    cd ../..
    ```
 
-3. **Start the local Internet Computer replica**
+3. **Set up environment variables**
+   ```bash
+   # Copy the example environment file
+   cp .env.example .env
+   
+   # Edit .env with your actual API keys and configuration
+   # Required: OPENAI_API_KEY (get from https://platform.openai.com/api-keys)
+   # Optional: Social media platform API credentials
+   ```
+
+4. **Start the local Internet Computer replica**
    ```bash
    dfx start --background
    ```
 
-4. **Deploy the canisters**
+5. **Deploy the canisters**
    ```bash
    dfx deploy
    ```
@@ -90,7 +100,46 @@ Viragent is built using a modern, decentralized architecture:
    - Frontend: `http://{canister-id}.localhost:4943/`
    - Backend Candid UI: `http://127.0.0.1:4943/?canisterId={candid-ui-id}&id={backend-id}`
 
-## 🛠️ Development
+## � Environment Setup
+
+### Required Environment Variables
+
+Copy `.env.example` to `.env` and configure the following:
+
+#### OpenAI API (Required for AI features)
+```bash
+OPENAI_API_KEY=your_openai_api_key_here
+VITE_OPENAI_API_KEY=your_openai_api_key_here
+```
+Get your API key from [OpenAI Platform](https://platform.openai.com/api-keys)
+
+#### Social Media Platform APIs (Optional)
+
+**Twitter/X API v2**
+```bash
+VITE_TWITTER_CLIENT_ID=your_twitter_client_id_here
+VITE_TWITTER_CLIENT_SECRET=your_twitter_client_secret_here
+VITE_TWITTER_BEARER_TOKEN=your_twitter_bearer_token_here
+```
+Get credentials from [Twitter Developer Portal](https://developer.twitter.com)
+
+**Instagram Basic Display API**
+```bash
+VITE_INSTAGRAM_CLIENT_ID=your_instagram_client_id_here
+VITE_INSTAGRAM_CLIENT_SECRET=your_instagram_client_secret_here
+```
+Get credentials from [Facebook Developers](https://developers.facebook.com)
+
+**LinkedIn API**
+```bash
+VITE_LINKEDIN_CLIENT_ID=your_linkedin_client_id_here
+VITE_LINKEDIN_CLIENT_SECRET=your_linkedin_client_secret_here
+```
+Get credentials from [LinkedIn Developer Portal](https://developer.linkedin.com)
+
+⚠️ **Important**: Never commit your actual API keys to version control. The `.env` file is ignored by Git for security.
+
+## �🛠️ Development
 
 ### Project Structure
 

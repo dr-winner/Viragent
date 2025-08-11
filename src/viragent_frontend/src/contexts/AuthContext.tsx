@@ -51,6 +51,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       await backendService.init(identity);
       
+      // Initialize backend with OpenAI API key from environment
+      const openaiApiKey = import.meta.env.VITE_OPENAI_API_KEY || import.meta.env.OPENAI_API_KEY;
+      if (openaiApiKey) {
+        console.log('Initializing backend with OpenAI API key...');
+        const initResult = await backendService.initWithOpenAIKey(openaiApiKey);
+        if (initResult.success) {
+          console.log('Backend initialized with OpenAI:', initResult.data);
+        } else {
+          console.warn('Failed to initialize with OpenAI key:', initResult.error);
+        }
+      } else {
+        console.warn('No OpenAI API key found in environment variables');
+      }
+      
       // Auto-register user if not already registered
       const isRegResult = await backendService.isRegistered();
       if (isRegResult.success && !isRegResult.data) {
